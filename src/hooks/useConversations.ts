@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
-import { Conversation, Message } from "@/types";
+import { Conversation, Message, MessageRole } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { DbMessage } from "@/types/database.types";
 
 export const useConversations = () => {
   const { user } = useAuth();
@@ -94,7 +94,7 @@ export const useConversations = () => {
       
       const formattedMessages: Message[] = (data || []).map((msg: any) => ({
         id: msg.id,
-        role: msg.role as Message['role'],
+        role: msg.role as MessageRole,
         content: msg.content,
         timestamp: new Date(msg.timestamp)
       }));
@@ -147,7 +147,7 @@ export const useConversations = () => {
     }
   };
 
-  const addMessage = async (content: string, role: Message['role'] = 'user') => {
+  const addMessage = async (content: string, role: MessageRole = 'user') => {
     if (!user || !activeConversation) {
       // Create a new conversation if none exists
       const newConversation = await createConversation();
@@ -198,7 +198,7 @@ export const useConversations = () => {
       if (activeConversation && data) {
         const realMessage: Message = {
           id: data.id,
-          role: data.role,
+          role: data.role as MessageRole,
           content: data.content,
           timestamp: new Date(data.timestamp)
         };
