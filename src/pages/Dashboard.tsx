@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,19 @@ import { processWithAI } from "@/utils/ai";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
-import { Mic, MicOff, Send, VolumeX, Volume2 } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useDevMode } from "@/contexts/DevModeContext";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const DEMO_MODULES: Module[] = [
   {
@@ -84,6 +96,11 @@ const Dashboard = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [micEnabled, setMicEnabled] = useState(false);
   const [recognizedText, setRecognizedText] = useState("");
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  
+  // Context
+  const { isDevMode, userRole } = useDevMode();
+  const { signOut } = useAuth();
   
   // Refs
   const messageEndRef = useRef<HTMLDivElement>(null);
@@ -213,44 +230,107 @@ const Dashboard = () => {
     }
   };
   
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("You have been signed out");
+    } catch (error) {
+      toast.error("Error signing out. Please try again.");
+    }
+  };
+  
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex flex-col w-full overflow-hidden"
+    >
       {/* Header */}
-      <header className="p-4 border-b border-gray-800 glass-panel">
+      <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
         <div className="container flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <AssistantAvatar size="sm" />
             <h1 className="text-xl font-bold text-white">
               {SYSTEM_CONFIG.ASSISTANT_NAME}
               <span className="text-xs text-gray-400 ml-2">v{SYSTEM_CONFIG.SYSTEM_VERSION}</span>
+              {isDevMode && (
+                <span className="ml-2 text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
+                  {userRole}
+                </span>
+              )}
             </h1>
           </div>
-          <nav>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:block">
             <ul className="flex space-x-6">
               <li>
-                <Link to="/" className="text-gray-300 hover:text-white text-sm">
+                <Link to="/dashboard" className="text-primary hover:text-white text-sm font-medium transition-colors">
                   Dashboard
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="text-gray-400 hover:text-white text-sm">
+                <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">
                   Profile
                 </Link>
               </li>
               <li>
-                <Link to="/settings" className="text-gray-400 hover:text-white text-sm">
+                <Link to="/settings" className="text-gray-400 hover:text-white text-sm transition-colors">
                   Settings
                 </Link>
               </li>
             </ul>
           </nav>
+          
+          {/* Mobile Navigation */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Navigation</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer">
+                    <SettingsIcon className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
       
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <motion.div 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex-1 flex flex-col h-full overflow-hidden"
+        >
           {/* System status */}
           <div className="p-4">
             <StatusIndicator status={systemStatus} />
@@ -258,9 +338,16 @@ const Dashboard = () => {
           
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex flex-col space-y-1">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
+            <div className="flex flex-col space-y-3 max-w-3xl mx-auto">
+              {messages.map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <MessageBubble message={message} />
+                </motion.div>
               ))}
               <div ref={messageEndRef} />
             </div>
@@ -268,14 +355,23 @@ const Dashboard = () => {
           
           {/* Speech recognition feedback */}
           {micEnabled && recognizedText && (
-            <div className="p-2 bg-gray-800 bg-opacity-50 m-4 rounded-lg">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 bg-gray-800 bg-opacity-50 mx-4 mb-4 rounded-lg"
+            >
               <p className="text-sm text-gray-300 italic">{recognizedText}</p>
-            </div>
+            </motion.div>
           )}
           
           {/* Input area */}
-          <div className="p-4 border-t border-gray-800 glass-panel">
-            <div className="flex items-end space-x-2">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="p-4 border-t border-gray-800 glass-panel"
+          >
+            <div className="flex items-end space-x-2 max-w-3xl mx-auto">
               <Button
                 variant="outline"
                 size="icon"
@@ -289,7 +385,7 @@ const Dashboard = () => {
                 placeholder="Type your message..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                className="resize-none"
+                className="resize-none min-h-[60px]"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -312,11 +408,16 @@ const Dashboard = () => {
                 Send
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
         
-        {/* Sidebar */}
-        <div className="w-96 border-l border-gray-800 overflow-y-auto p-4 hidden lg:block">
+        {/* Sidebar - Desktop */}
+        <motion.div 
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="w-96 border-l border-gray-800 overflow-y-auto p-4 hidden lg:block"
+        >
           <Tabs defaultValue="status">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="status">System Status</TabsTrigger>
@@ -368,9 +469,9 @@ const Dashboard = () => {
               </div>
             </TabsContent>
           </Tabs>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
