@@ -1,4 +1,3 @@
-
 // User Profile Type
 export interface UserProfile {
   id?: string;
@@ -90,3 +89,6 @@ export interface AuthState {
   session: any | null;
   isLoading: boolean;
 }
+
+// Re-export existing types from the original file
+export * from './automation';

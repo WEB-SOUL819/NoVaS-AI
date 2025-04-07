@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Automation from "./pages/Automation";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
@@ -68,6 +69,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Settings />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/automation" 
+                      element={
+                        <ProtectedRoute>
+                          <Automation />
                         </ProtectedRoute>
                       } 
                     />

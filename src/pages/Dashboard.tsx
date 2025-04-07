@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -75,7 +74,6 @@ const DEMO_MODULES: Module[] = [
 ];
 
 const Dashboard = () => {
-  // State
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -98,20 +96,16 @@ const Dashboard = () => {
   const [recognizedText, setRecognizedText] = useState("");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
-  // Context
   const { isDevMode, userRole } = useDevMode();
   const { signOut } = useAuth();
   
-  // Refs
   const messageEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<{ stop: () => void } | null>(null);
   
-  // Scroll to bottom of messages when new ones are added
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  // Handle speech recognition
   useEffect(() => {
     if (micEnabled) {
       setSystemStatus(prev => ({ ...prev, isListening: true }));
@@ -147,12 +141,10 @@ const Dashboard = () => {
     };
   }, [micEnabled]);
   
-  // Handle form submission
   const handleSubmit = async (text?: string) => {
     const messageText = text || inputMessage;
     if (!messageText.trim()) return;
     
-    // Create new user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -160,7 +152,6 @@ const Dashboard = () => {
       timestamp: new Date(),
     };
     
-    // Create placeholder for assistant response
     const assistantPlaceholder: Message = {
       id: (Date.now() + 1).toString(),
       role: "assistant",
@@ -169,18 +160,14 @@ const Dashboard = () => {
       isProcessing: true,
     };
     
-    // Update messages state
     setMessages(prev => [...prev, userMessage, assistantPlaceholder]);
     setInputMessage("");
     
-    // Show thinking state
     setSystemStatus(prev => ({ ...prev, isThinking: true }));
     
     try {
-      // Process with AI
       const aiResponse = await processWithAI([...messages, userMessage]);
       
-      // Replace placeholder with actual response
       setMessages(prev => 
         prev.map(msg => 
           msg.id === assistantPlaceholder.id
@@ -193,10 +180,8 @@ const Dashboard = () => {
         )
       );
       
-      // Update thinking state
       setSystemStatus(prev => ({ ...prev, isThinking: false }));
       
-      // Text-to-speech if enabled
       if (voiceEnabled) {
         setSystemStatus(prev => ({ ...prev, isSpeaking: true }));
         const audioBlob = await textToSpeech(aiResponse.text);
@@ -208,7 +193,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error processing message:", error);
       
-      // Update placeholder with error message
       setMessages(prev => 
         prev.map(msg => 
           msg.id === assistantPlaceholder.id
@@ -222,10 +206,8 @@ const Dashboard = () => {
         )
       );
       
-      // Reset states
       setSystemStatus(prev => ({ ...prev, isThinking: false, isSpeaking: false }));
       
-      // Show error toast
       toast.error("Error processing message. Please try again.");
     }
   };
@@ -246,7 +228,6 @@ const Dashboard = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen flex flex-col w-full overflow-hidden"
     >
-      {/* Header */}
       <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
         <div className="container flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -262,12 +243,16 @@ const Dashboard = () => {
             </h1>
           </div>
           
-          {/* Desktop Navigation */}
           <nav className="hidden md:block">
             <ul className="flex space-x-6">
               <li>
                 <Link to="/dashboard" className="text-primary hover:text-white text-sm font-medium transition-colors">
                   Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/automation" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Automation
                 </Link>
               </li>
               <li>
@@ -283,7 +268,6 @@ const Dashboard = () => {
             </ul>
           </nav>
           
-          {/* Mobile Navigation */}
           <div className="md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -297,6 +281,12 @@ const Dashboard = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard" className="cursor-pointer">
                     Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/automation" className="cursor-pointer">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    Automation
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -322,21 +312,17 @@ const Dashboard = () => {
         </div>
       </header>
       
-      {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main chat area */}
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex-1 flex flex-col h-full overflow-hidden"
         >
-          {/* System status */}
           <div className="p-4">
             <StatusIndicator status={systemStatus} />
           </div>
           
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="flex flex-col space-y-3 max-w-3xl mx-auto">
               {messages.map((message, index) => (
@@ -353,7 +339,6 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Speech recognition feedback */}
           {micEnabled && recognizedText && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
@@ -364,7 +349,6 @@ const Dashboard = () => {
             </motion.div>
           )}
           
-          {/* Input area */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -411,7 +395,6 @@ const Dashboard = () => {
           </motion.div>
         </motion.div>
         
-        {/* Sidebar - Desktop */}
         <motion.div 
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
