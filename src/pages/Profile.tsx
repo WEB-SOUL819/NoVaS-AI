@@ -12,11 +12,11 @@ import { ArrowLeft, Save, User } from "lucide-react";
 import { toast } from "sonner";
 
 const Profile = () => {
-  // Fix the theme type to match the UserProfile type
+  // Explicitly cast the theme to the correct type
   const [profile, setProfile] = useState<UserProfile>({
     name: DEFAULT_USER_PROFILE.name,
     preferredVoice: DEFAULT_USER_PROFILE.preferredVoice,
-    theme: DEFAULT_USER_PROFILE.theme,
+    theme: DEFAULT_USER_PROFILE.theme as "light" | "dark" | "system",
     notificationsEnabled: DEFAULT_USER_PROFILE.notificationsEnabled,
   });
 
