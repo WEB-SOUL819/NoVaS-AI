@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,8 @@ import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
 import { Mic, MicOff, Send, VolumeX, Volume2 } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
-// Demo data for modules
 const DEMO_MODULES: Module[] = [
   {
     id: "voice-engine",
