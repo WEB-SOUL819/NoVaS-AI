@@ -1,29 +1,94 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { DEFAULT_USER_PROFILE } from "@/config/env";
 import { UserProfile } from "@/types";
 import { ArrowLeft, Save, User } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Profile = () => {
-  // Explicitly cast the theme to the correct type
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
-    name: DEFAULT_USER_PROFILE.name,
-    preferredVoice: DEFAULT_USER_PROFILE.preferredVoice,
-    theme: DEFAULT_USER_PROFILE.theme as "light" | "dark" | "system",
-    notificationsEnabled: DEFAULT_USER_PROFILE.notificationsEnabled,
+    name: "",
+    preferredVoice: "Sarah",
+    theme: "dark" as "light" | "dark" | "system",
+    notificationsEnabled: true,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveProfile = () => {
-    // In a real app, this would save to a database or local storage
-    toast.success("Profile saved successfully.");
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setProfile({
+            id: data.id,
+            name: data.name,
+            preferredVoice: data.preferred_voice,
+            theme: data.theme as "light" | "dark" | "system",
+            notificationsEnabled: data.notifications_enabled,
+            createdAt: new Date(data.created_at),
+            updatedAt: new Date(data.updated_at),
+          });
+        }
+      } catch (error: any) {
+        toast.error("Error loading profile: " + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          name: profile.name,
+          preferred_voice: profile.preferredVoice,
+          theme: profile.theme,
+          notifications_enabled: profile.notificationsEnabled
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success("Profile saved successfully.");
+    } catch (error: any) {
+      toast.error("Error saving profile: " + error.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nova-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -93,9 +158,13 @@ const Profile = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveProfile} className="w-full nova-gradient">
+              <Button 
+                onClick={handleSaveProfile} 
+                className="w-full nova-gradient"
+                disabled={isSaving}
+              >
                 <Save className="mr-2 h-4 w-4" />
-                Save Profile
+                {isSaving ? "Saving..." : "Save Profile"}
               </Button>
             </CardFooter>
           </Card>
@@ -114,7 +183,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <h3 className="text-lg font-medium">{profile.name}</h3>
-                  <p className="text-sm text-muted-foreground">User ID: USR-12345</p>
+                  <p className="text-sm text-muted-foreground">User ID: {profile.id?.substring(0, 8)}</p>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-2">

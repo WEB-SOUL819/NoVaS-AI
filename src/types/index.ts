@@ -83,3 +83,10 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+// Auth related types
+export interface AuthState {
+  user: any | null;
+  session: any | null;
+  isLoading: boolean;
+}

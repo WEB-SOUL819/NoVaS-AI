@@ -9,7 +9,134 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          id: string
+          role: string
+          timestamp: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          id?: string
+          role: string
+          timestamp?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          id?: string
+          role?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modules: {
+        Row: {
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          status: string
+        }
+        Insert: {
+          description: string
+          id: string
+          is_active?: boolean
+          name: string
+          status: string
+        }
+        Update: {
+          description?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      system_status: {
+        Row: {
+          id: string
+          is_online: boolean
+          last_updated: string
+        }
+        Insert: {
+          id?: string
+          is_online?: boolean
+          last_updated?: string
+        }
+        Update: {
+          id?: string
+          is_online?: boolean
+          last_updated?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notifications_enabled: boolean
+          preferred_voice: string
+          theme: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name?: string
+          notifications_enabled?: boolean
+          preferred_voice?: string
+          theme?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notifications_enabled?: boolean
+          preferred_voice?: string
+          theme?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
