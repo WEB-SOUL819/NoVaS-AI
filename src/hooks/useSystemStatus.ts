@@ -38,14 +38,22 @@ export const useSystemStatus = () => {
         if (modulesError) throw modulesError;
 
         // Filter active modules
-        const activeModules = modulesData.filter(module => module.is_active) as Module[];
+        const activeModules = modulesData ? 
+          modulesData.filter((module: any) => module.is_active).map((module: any) => ({
+            id: module.id,
+            name: module.name,
+            isActive: module.is_active,
+            status: module.status,
+            description: module.description
+          })) as Module[] : 
+          [];
         
         setSystemStatus({
-          isOnline: statusData.is_online,
+          isOnline: statusData ? statusData.is_online : false,
           isListening: false, // These are real-time states, set default values
           isSpeaking: false,
           isThinking: false,
-          lastUpdated: new Date(statusData.last_updated),
+          lastUpdated: statusData ? new Date(statusData.last_updated) : new Date(),
           activeModules,
           batteryLevel: 85, // Sample values for UI (could be expanded in the future)
           cpuUsage: 35,

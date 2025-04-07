@@ -52,7 +52,7 @@ export const useConversations = () => {
       
       if (error) throw error;
       
-      const formattedConversations: Conversation[] = (data || []).map((convo) => ({
+      const formattedConversations: Conversation[] = (data || []).map((convo: any) => ({
         id: convo.id,
         title: convo.title,
         messages: [],
@@ -92,7 +92,7 @@ export const useConversations = () => {
       
       if (error) throw error;
       
-      const formattedMessages: Message[] = (data || []).map((msg) => ({
+      const formattedMessages: Message[] = (data || []).map((msg: any) => ({
         id: msg.id,
         role: msg.role as Message['role'],
         content: msg.content,
@@ -126,18 +126,21 @@ export const useConversations = () => {
       
       if (error) throw error;
       
-      const newConversation: Conversation = {
-        id: data.id,
-        title: data.title,
-        messages: [],
-        createdAt: new Date(data.created_at),
-        updatedAt: new Date(data.updated_at)
-      };
-      
-      setConversations([newConversation, ...conversations]);
-      setActiveConversation(newConversation);
-      
-      return newConversation;
+      if (data) {
+        const newConversation: Conversation = {
+          id: data.id,
+          title: data.title,
+          messages: [],
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at)
+        };
+        
+        setConversations([newConversation, ...conversations]);
+        setActiveConversation(newConversation);
+        
+        return newConversation;
+      }
+      return null;
     } catch (error: any) {
       toast.error("Error creating conversation: " + error.message);
       return null;
@@ -192,7 +195,7 @@ export const useConversations = () => {
       if (error) throw error;
       
       // Update the conversation with the real message
-      if (activeConversation) {
+      if (activeConversation && data) {
         const realMessage: Message = {
           id: data.id,
           role: data.role,
