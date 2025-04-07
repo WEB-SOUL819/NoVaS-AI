@@ -12,6 +12,7 @@ import { UserRole, ROLE_PERMISSIONS } from "@/types/roles";
 import { Code, Cpu, Database, Shield, Terminal, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { SYSTEM_CONFIG } from "@/config/env";
 
 const DevTools = () => {
   const { isDevMode, toggleDevMode, userRole, setUserRole } = useDevMode();
