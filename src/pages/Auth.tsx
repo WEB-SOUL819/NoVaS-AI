@@ -17,14 +17,25 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (user && !isLoading) {
       navigate("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
+
+  // If auth is still loading, show a small loading indicator
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +52,7 @@ const Auth = () => {
       toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("Login error:", error);
       toast.error("Login failed", {
         description: error.message || "Please check your credentials",
       });
@@ -67,6 +79,7 @@ const Auth = () => {
       
       setActiveTab("login");
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast.error("Signup failed", {
         description: error.message || "Please try again",
       });

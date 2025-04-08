@@ -39,43 +39,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const setupAuth = async () => {
-      setIsLoading(true);
-      
-      // Set up auth state listener FIRST
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, currentSession) => {
-          setSession(currentSession);
-          if (currentSession?.user) {
-            const userData = await fetchUserData(currentSession.user);
-            setUser(userData);
-            setIsAdmin(userData.role === 'admin' || userData.role === 'owner');
-            setIsOwner(userData.role === 'owner');
-            setHasValidSubscription(userData.subscriptionTier !== 'free');
-          } else {
-            setUser(null);
-            setIsAdmin(false);
-            setIsOwner(false);
-            setHasValidSubscription(false);
+      try {
+        setIsLoading(true);
+        
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, currentSession) => {
+            console.log("Auth state changed:", event, currentSession?.user?.email);
+            setSession(currentSession);
+            
+            if (currentSession?.user) {
+              // Handle auth state change synchronously to prevent blocking
+              setUser(prev => {
+                if (!prev || prev.id !== currentSession.user.id) {
+                  // Use setTimeout to avoid recursion with auth changes
+                  setTimeout(() => {
+                    fetchUserData(currentSession.user).then(userData => {
+                      setUser(userData);
+                      setIsAdmin(userData.role === 'admin' || userData.role === 'owner');
+                      setIsOwner(userData.role === 'owner');
+                      setHasValidSubscription(userData.subscriptionTier !== 'free');
+                    });
+                  }, 0);
+                }
+                return prev;
+              });
+            } else {
+              setUser(null);
+              setIsAdmin(false);
+              setIsOwner(false);
+              setHasValidSubscription(false);
+            }
+            
+            setIsLoading(false);
           }
-          setIsLoading(false);
+        );
+
+        // THEN check for existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          const userData = await fetchUserData(currentSession.user);
+          setUser(userData);
+          setIsAdmin(userData.role === 'admin' || userData.role === 'owner');
+          setIsOwner(userData.role === 'owner');
+          setHasValidSubscription(userData.subscriptionTier !== 'free');
         }
-      );
+        
+        setIsLoading(false);
 
-      // THEN check for existing session
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      
-      if (currentSession?.user) {
-        const userData = await fetchUserData(currentSession.user);
-        setUser(userData);
-        setIsAdmin(userData.role === 'admin' || userData.role === 'owner');
-        setIsOwner(userData.role === 'owner');
-        setHasValidSubscription(userData.subscriptionTier !== 'free');
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error setting up auth:", error);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-
-      return () => subscription.unsubscribe();
     };
 
     setupAuth();
@@ -90,17 +110,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', supabaseUser.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching profile:", error);
+        throw error;
+      }
       
-      // Determine role based on email (since we don't have the roles table yet)
-      // In a production app, you'd use a proper roles table query
+      // Determine role based on email
       let role: UserRole = 'user';
       if (supabaseUser.email === OWNER_EMAIL) {
         role = 'owner';
       }
 
       // For now, assume subscription tier
-      // In a production app, you'd query the subscriptions table
       const subscriptionTier = 'free';
 
       return {
@@ -127,8 +148,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out successfully");
+    try {
+      await supabase.auth.signOut();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
+    }
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
