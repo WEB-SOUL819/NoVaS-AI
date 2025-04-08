@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Code, FlowChart, ArrowUpDown, Activity } from "lucide-react";
+import { Code, GitBranch, ArrowUpDown, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface AutomationWorkflowListProps {
@@ -60,7 +60,7 @@ const AutomationWorkflowList: React.FC<AutomationWorkflowListProps> = ({
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-medium flex items-center">
-                    <FlowChart className="h-4 w-4 mr-2 text-blue-400" />
+                    <GitBranch className="h-4 w-4 mr-2 text-blue-400" />
                     {workflow.name}
                     <Badge className="ml-2" variant={workflow.isActive ? "default" : "outline"}>
                       {workflow.isActive ? "Active" : "Inactive"}

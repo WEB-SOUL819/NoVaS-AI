@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { processWithAI } from "@/utils/ai";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
-import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
 import { useDevMode } from "@/contexts/DevModeContext";
 import { motion } from "framer-motion";

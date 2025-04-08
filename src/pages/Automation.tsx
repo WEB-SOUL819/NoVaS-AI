@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAutomation } from "@/hooks/useAutomation";
 import { AutomationTask, AutomationWorkflow } from "@/types";
-import { Plus, ArrowRight, BrainCircuit, List, FlowChart, Zap } from "lucide-react";
+import { Plus, ArrowRight, BrainCircuit, List, GitBranch, Zap } from "lucide-react";
 import AutomationTaskList from "@/components/AutomationTaskList";
 import AutomationWorkflowList from "@/components/AutomationWorkflowList";
 import AutomationAssistant from "@/components/AutomationAssistant";
@@ -114,7 +113,7 @@ const Automation = () => {
               Tasks
             </TabsTrigger>
             <TabsTrigger value="workflows" className="flex items-center">
-              <FlowChart className="h-4 w-4 mr-2" />
+              <GitBranch className="h-4 w-4 mr-2" />
               Workflows
             </TabsTrigger>
             <TabsTrigger value="assistant" className="flex items-center">
@@ -279,7 +278,7 @@ const Automation = () => {
                     className="w-full"
                     disabled={!newWorkflowName.trim() || !newWorkflowRequest.trim() || isLoading}
                   >
-                    <FlowChart className="h-4 w-4 mr-2" />
+                    <GitBranch className="h-4 w-4 mr-2" />
                     Generate Workflow
                   </Button>
                 </CardContent>
