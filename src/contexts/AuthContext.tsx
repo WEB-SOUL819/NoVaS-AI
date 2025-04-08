@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // For now, assume subscription tier
       // In a production app, you'd query the subscriptions table
-      const subscriptionTier = profile?.tier || 'free';
+      const subscriptionTier = 'free';
 
       return {
         id: supabaseUser.id,
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: role,
         subscriptionTier: subscriptionTier as 'free' | 'basic' | 'premium' | 'enterprise',
         createdAt: new Date(supabaseUser.created_at || Date.now()),
-        avatarUrl: profile?.avatar_url
+        // Only include avatarUrl if it's available in the profile
       };
     } catch (error) {
       console.error("Error fetching user data:", error);
