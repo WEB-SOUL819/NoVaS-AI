@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import DevTools from "@/components/DevTools";
 import SplashScreen from "@/components/SplashScreen";
+import HynxFooter from "@/components/HynxFooter";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -46,45 +47,50 @@ const App = () => {
                 <Sonner />
                 <DevTools />
                 <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route element={<AppLayout />}>
-                      <Route 
-                        path="/dashboard" 
-                        element={
-                          <ProtectedRoute>
-                            <Dashboard />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route 
-                        path="/profile" 
-                        element={
-                          <ProtectedRoute>
-                            <Profile />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route 
-                        path="/settings" 
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        } 
-                      />
-                      <Route 
-                        path="/automation" 
-                        element={
-                          <ProtectedRoute>
-                            <Automation />
-                          </ProtectedRoute>
-                        } 
-                      />
-                    </Route>
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <div className="flex flex-col min-h-screen">
+                    <div className="flex-grow">
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route element={<AppLayout />}>
+                          <Route 
+                            path="/dashboard" 
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/profile" 
+                            element={
+                              <ProtectedRoute>
+                                <Profile />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/settings" 
+                            element={
+                              <ProtectedRoute>
+                                <Settings />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/automation" 
+                            element={
+                              <ProtectedRoute>
+                                <Automation />
+                              </ProtectedRoute>
+                            } 
+                          />
+                        </Route>
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </div>
+                    <HynxFooter />
+                  </div>
                 </BrowserRouter>
               </>
             )}

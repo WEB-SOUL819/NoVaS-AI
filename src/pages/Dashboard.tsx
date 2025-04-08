@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ import { toast } from "sonner";
 import { useDevMode } from "@/contexts/DevModeContext";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { getUserGreeting } from "@/utils/userGreeting";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,11 +75,12 @@ const DEMO_MODULES: Module[] = [
 ];
 
 const Dashboard = () => {
+  const { user, signOut } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: `Hello, I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}. How can I assist you today?`,
+      content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}. How can I assist you today?`,
       timestamp: new Date(),
     },
   ]);
@@ -98,7 +99,6 @@ const Dashboard = () => {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
   const { isDevMode, userRole } = useDevMode();
-  const { signOut } = useAuth();
   
   const messageEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<{ stop: () => void } | null>(null);
@@ -106,6 +106,21 @@ const Dashboard = () => {
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length > 0 && prev[0].id === "welcome") {
+        return [
+          {
+            ...prev[0],
+            content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}. How can I assist you today?`,
+          },
+          ...prev.slice(1)
+        ];
+      }
+      return prev;
+    });
+  }, [user]);
   
   useEffect(() => {
     if (micEnabled) {
