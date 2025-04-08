@@ -1,6 +1,7 @@
 
 import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS } from "@/config/env";
 import { AIResponse, Message, AutomationTask } from "@/types";
+import { searchWikipedia } from "./wikipedia";
 
 /**
  * Processes a message through the Gemini AI API
@@ -12,41 +13,103 @@ export async function processWithAI(
   try {
     const startTime = Date.now();
 
+    // Get the last user message
+    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    
+    // Handle time/date requests locally
+    if (lastMessage.includes('time') || lastMessage.includes('date') || lastMessage.includes('day')) {
+      const now = new Date();
+      let responseText = '';
+      
+      if (lastMessage.includes('time')) {
+        responseText = `The current time is ${now.toLocaleTimeString()}.`;
+      } else if (lastMessage.includes('date') || lastMessage.includes('day')) {
+        responseText = `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`;
+      }
+      
+      return {
+        text: responseText,
+        tokens: estimateTokenCount(responseText),
+        processingTime: Date.now() - startTime,
+      };
+    }
+    
+    // Check for Wikipedia queries
+    if (lastMessage.includes('who is') || lastMessage.includes('what is') || 
+        lastMessage.includes('tell me about') || lastMessage.includes('wikipedia')) {
+      // Extract the query
+      let query = lastMessage;
+      
+      // Remove common phrases to get the actual search term
+      ['who is', 'what is', 'tell me about', 'wikipedia', 'search for', 'look up'].forEach(phrase => {
+        query = query.replace(phrase, '');
+      });
+      
+      query = query.trim();
+      
+      if (query) {
+        const wikipediaResult = await searchWikipedia(query);
+        return {
+          text: wikipediaResult,
+          tokens: estimateTokenCount(wikipediaResult),
+          processingTime: Date.now() - startTime,
+        };
+      }
+    }
+
     // Format messages for the API
     const formattedMessages = formatMessagesForGemini(messages, systemPrompt);
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_CONFIG.MODEL}:generateContent?key=${API_KEYS.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: formattedMessages,
-        generationConfig: {
-          temperature: AI_CONFIG.TEMPERATURE,
-          maxOutputTokens: AI_CONFIG.MAX_OUTPUT_TOKENS,
-          topP: AI_CONFIG.TOP_P,
-          topK: AI_CONFIG.TOP_K,
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_CONFIG.MODEL}:generateContent?key=${API_KEYS.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        body: JSON.stringify({
+          contents: formattedMessages,
+          generationConfig: {
+            temperature: AI_CONFIG.TEMPERATURE,
+            maxOutputTokens: AI_CONFIG.MAX_OUTPUT_TOKENS,
+            topP: AI_CONFIG.TOP_P,
+            topK: AI_CONFIG.TOP_K,
+          },
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("AI API Error:", errorData);
-      throw new Error(`API error: ${response.status} ${errorData?.error?.message || 'Unknown error'}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("AI API Error:", errorData);
+        throw new Error(`API error: ${response.status} ${errorData?.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, but I couldn't generate a response.";
+      const tokens = estimateTokenCount(aiText);
+      const processingTime = Date.now() - startTime;
+
+      return {
+        text: aiText,
+        tokens,
+        processingTime,
+      };
+    } catch (error) {
+      console.error("Error calling AI API:", error);
+      // Handle common queries with fallback responses when API fails
+      if (lastMessage.includes('hello') || lastMessage.includes('hi')) {
+        return {
+          text: "Hello! How can I assist you today?",
+          tokens: 8,
+          processingTime: Date.now() - startTime,
+        };
+      }
+      
+      return {
+        text: "I'm sorry, I'm having trouble connecting to my knowledge base right now. Is there something simple I can help you with?",
+        tokens: 20,
+        processingTime: Date.now() - startTime,
+      };
     }
-
-    const data = await response.json();
-    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, but I couldn't generate a response.";
-    const tokens = estimateTokenCount(aiText);
-    const processingTime = Date.now() - startTime;
-
-    return {
-      text: aiText,
-      tokens,
-      processingTime,
-    };
   } catch (error) {
     console.error("Error processing with AI:", error);
     return {

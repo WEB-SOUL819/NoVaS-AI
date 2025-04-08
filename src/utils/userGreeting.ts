@@ -8,7 +8,7 @@ export const getUserGreeting = (user: AuthUser | null): string => {
   if (!user) return "Welcome, Guest";
   
   if (user.role === 'owner') {
-    return `Welcome, Sir ${user.name || ''}`;
+    return `Welcome, Sir`;
   } else if (user.role === 'admin') {
     return `Welcome, Admin ${user.name || ''}`;
   } else {
