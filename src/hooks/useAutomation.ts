@@ -138,6 +138,32 @@ export const useAutomation = () => {
     }
   };
 
+  const updateWorkflowStatus = async (workflowId: string, isActive: boolean) => {
+    if (!user) return;
+    
+    try {
+      const updatedWorkflows = workflows.map(workflow => 
+        workflow.id === workflowId 
+          ? { 
+              ...workflow, 
+              isActive,
+              updatedAt: new Date()
+            } 
+          : workflow
+      );
+      
+      setWorkflows(updatedWorkflows);
+      
+      // Save to localStorage (temporary solution)
+      localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      
+      toast.success(`Workflow ${isActive ? 'activated' : 'deactivated'}`);
+    } catch (error) {
+      console.error("Error updating workflow status:", error);
+      toast.error("Failed to update workflow status");
+    }
+  };
+
   const deleteTask = async (taskId: string) => {
     if (!user) return;
     
@@ -223,6 +249,7 @@ export const useAutomation = () => {
     saveTask,
     saveWorkflow,
     updateTaskStatus,
+    updateWorkflowStatus,
     deleteTask,
     analyzeText,
     createWorkflowFromRequest

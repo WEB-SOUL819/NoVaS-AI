@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { AutomationWorkflow } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,33 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Code, GitBranch, ArrowUpDown, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 interface AutomationWorkflowListProps {
   workflows: AutomationWorkflow[];
   isLoading: boolean;
+  onToggleActive?: (workflowId: string, isActive: boolean) => Promise<void>;
 }
 
 const AutomationWorkflowList: React.FC<AutomationWorkflowListProps> = ({
   workflows,
-  isLoading
+  isLoading,
+  onToggleActive
 }) => {
+  const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null);
+  
+  const handleToggleActive = async (workflowId: string, currentStatus: boolean) => {
+    try {
+      if (onToggleActive) {
+        await onToggleActive(workflowId, !currentStatus);
+        toast.success(`Workflow ${!currentStatus ? 'activated' : 'deactivated'}`);
+      }
+    } catch (error) {
+      console.error("Error toggling workflow status:", error);
+      toast.error("Failed to update workflow status");
+    }
+  };
+  
   if (isLoading) {
     return (
       <Card>
@@ -69,7 +86,10 @@ const AutomationWorkflowList: React.FC<AutomationWorkflowListProps> = ({
                   <p className="text-sm text-gray-400 mt-1">{workflow.description}</p>
                 </div>
                 
-                <Switch checked={workflow.isActive} />
+                <Switch 
+                  checked={workflow.isActive} 
+                  onCheckedChange={() => handleToggleActive(workflow.id, workflow.isActive)}
+                />
               </div>
               
               <div className="bg-gray-900 rounded-md p-3 mb-3">
@@ -110,11 +130,25 @@ const AutomationWorkflowList: React.FC<AutomationWorkflowListProps> = ({
               
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Created: {workflow.createdAt.toLocaleString()}</span>
-                <Button size="sm" variant="ghost">
+                <Button size="sm" variant="ghost" onClick={() => setExpandedWorkflow(expandedWorkflow === workflow.id ? null : workflow.id)}>
                   <Code className="h-3 w-3 mr-1" />
-                  View Details
+                  {expandedWorkflow === workflow.id ? "Hide Details" : "View Details"}
                 </Button>
               </div>
+
+              {expandedWorkflow === workflow.id && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-3 p-3 bg-gray-900 rounded-md"
+                >
+                  <h4 className="text-sm font-medium mb-2">Workflow Details</h4>
+                  <pre className="text-xs bg-gray-800 p-2 rounded overflow-x-auto">
+                    {workflow.actions.map(action => action.parameters.content || JSON.stringify(action.parameters, null, 2)).join('\n\n')}
+                  </pre>
+                </motion.div>
+              )}
             </motion.div>
           ))}
         </div>
