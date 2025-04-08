@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: role,
         subscriptionTier: subscriptionTier as 'free' | 'basic' | 'premium' | 'enterprise',
         createdAt: new Date(supabaseUser.created_at || Date.now()),
-        // Only include avatarUrl if it's available in the profile
+        // We don't have avatarUrl in the profile table
       };
     } catch (error) {
       console.error("Error fetching user data:", error);
