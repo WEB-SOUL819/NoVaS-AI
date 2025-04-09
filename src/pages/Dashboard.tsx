@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,10 +12,10 @@ import SystemDiagnostics from "@/components/SystemDiagnostics";
 import ModuleStatusCard from "@/components/ModuleStatusCard";
 import { processWithAI } from "@/utils/ai";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
-import { searchWikipedia } from "@/utils/wikipedia";
+import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
-import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, Info } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, Info, History } from "lucide-react";
 import { toast } from "sonner";
 import { useDevMode } from "@/contexts/DevModeContext";
 import { motion } from "framer-motion";
@@ -194,9 +193,16 @@ const Dashboard = () => {
       if (messageText.toLowerCase().includes('time') || 
           messageText.toLowerCase().includes('date') || 
           messageText.toLowerCase().includes('day')) {
-        response = {
-          text: `The current date and time is: ${getCurrentDateTime()}`
-        };
+        const now = new Date();
+        if (messageText.toLowerCase().includes('time')) {
+          response = {
+            text: `The current time is ${now.toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit', hour12: true})}.`
+          };
+        } else {
+          response = {
+            text: `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`
+          };
+        }
       }
       // Handle greetings locally
       else if (messageText.toLowerCase().includes('good morning') || 
@@ -206,17 +212,18 @@ const Dashboard = () => {
           text: `${getTimeBasedGreeting()}, ${user?.role === 'owner' ? 'Sir' : user?.name || 'User'}. How may I assist you today?`
         };
       }
-      // Handle Wikipedia searches with "what is X" or "who is X" queries
-      else if (messageText.toLowerCase().match(/what is|who is|tell me about|wikipedia/)) {
-        const query = messageText.replace(/what is|who is|tell me about|wikipedia/gi, '').trim();
-        if (query) {
-          try {
-            const wikipediaResult = await searchWikipedia(query);
+      // Check for Wikipedia queries with improved detection
+      else if (isWikipediaQuery(messageText)) {
+        try {
+          const searchTerm = extractWikipediaSearchTerm(messageText);
+          console.log("Extracted Wikipedia search term:", searchTerm);
+          if (searchTerm) {
+            const wikipediaResult = await searchWikipedia(searchTerm);
             response = { text: wikipediaResult };
-          } catch (error) {
-            console.error("Wikipedia search error:", error);
-            // Fall back to AI processing if Wikipedia search fails
           }
+        } catch (error) {
+          console.error("Wikipedia search error:", error);
+          // Fall back to AI processing if Wikipedia search fails
         }
       }
       
@@ -241,10 +248,16 @@ const Dashboard = () => {
       
       if (voiceEnabled) {
         setSystemStatus(prev => ({ ...prev, isSpeaking: true }));
+        console.log("Attempting text-to-speech with:", response.text);
         const audioBlob = await textToSpeech(response.text);
+        console.log("TTS returned audioBlob:", !!audioBlob);
+        
         if (audioBlob) {
           await playAudio(audioBlob);
+        } else {
+          console.error("No audio blob returned from textToSpeech");
         }
+        
         setSystemStatus(prev => ({ ...prev, isSpeaking: false }));
       }
     } catch (error) {
@@ -307,6 +320,9 @@ const Dashboard = () => {
             <Link to="/automation" className="text-gray-400 hover:text-white text-sm transition-colors">
               Automation
             </Link>
+            <Link to="/history" className="text-gray-400 hover:text-white text-sm transition-colors">
+              History
+            </Link>
             <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">
               Profile
             </Link>
@@ -336,6 +352,12 @@ const Dashboard = () => {
                   <Link to="/automation" className="cursor-pointer">
                     <BrainCircuit className="mr-2 h-4 w-4" />
                     Automation
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/history" className="cursor-pointer">
+                    <History className="mr-2 h-4 w-4" />
+                    History
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

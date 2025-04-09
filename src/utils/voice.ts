@@ -11,7 +11,9 @@ export async function textToSpeech(text: string): Promise<Blob | null> {
       return null;
     }
 
-    console.log("Using API key:", API_KEYS.ELEVEN_LABS_API_KEY);
+    console.log(`Starting TTS request for text (${text.length} chars)`);
+    console.log("Using API key:", API_KEYS.ELEVEN_LABS_API_KEY ? "Present (hidden)" : "Missing");
+    console.log("Using voice ID:", VOICE_CONFIG.VOICE_ID);
     
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_CONFIG.VOICE_ID}`,
@@ -34,13 +36,17 @@ export async function textToSpeech(text: string): Promise<Blob | null> {
       }
     );
 
+    console.log("TTS API response status:", response.status);
+    
     if (!response.ok) {
       const errorData = await response.text();
       console.error("TTS API Error:", errorData);
       throw new Error(`TTS API error: ${response.status}`);
     }
 
-    return await response.blob();
+    const audioBlob = await response.blob();
+    console.log("TTS API returned audio blob:", audioBlob.size, "bytes");
+    return audioBlob;
   } catch (error) {
     console.error("Error in textToSpeech:", error);
     return null;
@@ -52,24 +58,43 @@ export async function textToSpeech(text: string): Promise<Blob | null> {
  */
 export async function playAudio(audioBlob: Blob): Promise<void> {
   try {
+    console.log("Creating URL for audio blob...");
     const url = URL.createObjectURL(audioBlob);
+    console.log("Audio URL created:", url);
+    
     const audio = new Audio(url);
     
     return new Promise((resolve, reject) => {
+      console.log("Setting up audio event handlers...");
+      
+      audio.onloadeddata = () => {
+        console.log("Audio data loaded, duration:", audio.duration);
+      };
+      
+      audio.onplay = () => {
+        console.log("Audio playback started");
+      };
+      
       audio.onended = () => {
+        console.log("Audio playback ended");
         URL.revokeObjectURL(url);
         resolve();
       };
       
       audio.onerror = (error) => {
+        console.error("Audio playback error:", error);
         URL.revokeObjectURL(url);
         reject(error);
       };
       
-      audio.play().catch(reject);
+      console.log("Starting audio playback...");
+      audio.play().catch(error => {
+        console.error("Error playing audio:", error);
+        reject(error);
+      });
     });
   } catch (error) {
-    console.error("Error playing audio:", error);
+    console.error("Error in playAudio:", error);
     throw error;
   }
 }

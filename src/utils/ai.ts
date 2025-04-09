@@ -1,7 +1,6 @@
-
 import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS } from "@/config/env";
 import { AIResponse, Message, AutomationTask } from "@/types";
-import { searchWikipedia } from "./wikipedia";
+import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from "./wikipedia";
 
 /**
  * Processes a message through the Gemini AI API
@@ -14,16 +13,17 @@ export async function processWithAI(
     const startTime = Date.now();
 
     // Get the last user message
-    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    const lastMessage = messages[messages.length - 1]?.content || '';
+    const lastMessageLower = lastMessage.toLowerCase();
     
     // Handle time/date requests locally
-    if (lastMessage.includes('time') || lastMessage.includes('date') || lastMessage.includes('day')) {
+    if (lastMessageLower.includes('time') || lastMessageLower.includes('date') || lastMessageLower.includes('day')) {
       const now = new Date();
       let responseText = '';
       
-      if (lastMessage.includes('time')) {
-        responseText = `The current time is ${now.toLocaleTimeString()}.`;
-      } else if (lastMessage.includes('date') || lastMessage.includes('day')) {
+      if (lastMessageLower.includes('time')) {
+        responseText = `The current time is ${now.toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit', hour12: true})}.`;
+      } else if (lastMessageLower.includes('date') || lastMessageLower.includes('day')) {
         responseText = `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`;
       }
       
@@ -34,21 +34,14 @@ export async function processWithAI(
       };
     }
     
-    // Check for Wikipedia queries
-    if (lastMessage.includes('who is') || lastMessage.includes('what is') || 
-        lastMessage.includes('tell me about') || lastMessage.includes('wikipedia')) {
-      // Extract the query
-      let query = lastMessage;
+    // Check for Wikipedia-like knowledge queries
+    if (isWikipediaQuery(lastMessage)) {
+      console.log("Detected Wikipedia query:", lastMessage);
+      const searchTerm = extractWikipediaSearchTerm(lastMessage);
       
-      // Remove common phrases to get the actual search term
-      ['who is', 'what is', 'tell me about', 'wikipedia', 'search for', 'look up'].forEach(phrase => {
-        query = query.replace(phrase, '');
-      });
-      
-      query = query.trim();
-      
-      if (query) {
-        const wikipediaResult = await searchWikipedia(query);
+      if (searchTerm) {
+        console.log("Extracted Wikipedia search term:", searchTerm);
+        const wikipediaResult = await searchWikipedia(searchTerm);
         return {
           text: wikipediaResult,
           tokens: estimateTokenCount(wikipediaResult),
@@ -96,7 +89,7 @@ export async function processWithAI(
     } catch (error) {
       console.error("Error calling AI API:", error);
       // Handle common queries with fallback responses when API fails
-      if (lastMessage.includes('hello') || lastMessage.includes('hi')) {
+      if (lastMessageLower.includes('hello') || lastMessageLower.includes('hi')) {
         return {
           text: "Hello! How can I assist you today?",
           tokens: 8,
