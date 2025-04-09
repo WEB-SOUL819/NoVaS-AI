@@ -10,7 +10,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import DevTools from "@/components/DevTools";
 import SplashScreen from "@/components/SplashScreen";
-import HynxFooter from "@/components/HynxFooter";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -97,7 +96,6 @@ const App = () => {
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </div>
-                      <HynxFooter />
                     </div>
                   </BrowserRouter>
                 </>

@@ -84,7 +84,7 @@ const Dashboard = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}. How can I assist you today?`,
+      content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by ${SYSTEM_CONFIG.CREATOR}, ${SYSTEM_CONFIG.CREATOR_TITLE}. How can I assist you today?`,
       timestamp: new Date(),
     },
   ]);
@@ -117,7 +117,7 @@ const Dashboard = () => {
         return [
           {
             ...prev[0],
-            content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}. How can I assist you today?`,
+            content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by ${SYSTEM_CONFIG.CREATOR}, ${SYSTEM_CONFIG.CREATOR_TITLE}. How can I assist you today?`,
           },
           ...prev.slice(1)
         ];
