@@ -1,11 +1,12 @@
 
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const AppLayout: React.FC = () => {
   const { isLoading } = useAuth();
+  const location = useLocation();
   
   if (isLoading) {
     return (

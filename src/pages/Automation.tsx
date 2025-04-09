@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAutomation } from "@/hooks/useAutomation";
 import { AutomationTask, AutomationWorkflow } from "@/types";
-import { Plus, ArrowRight, BrainCircuit, List, GitBranch, Zap, Camera, Lock } from "lucide-react";
+import { Plus, ArrowRight, BrainCircuit, List, GitBranch, Zap, Camera, Lock, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import AutomationTaskList from "@/components/AutomationTaskList";
 import AutomationWorkflowList from "@/components/AutomationWorkflowList";
 import AutomationAssistant from "@/components/AutomationAssistant";
@@ -35,6 +35,7 @@ const Automation = () => {
   } = useAutomation();
   
   const { user, hasValidSubscription } = useAuth();
+  const navigate = useNavigate();
   
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskType, setNewTaskType] = useState<AutomationTask["type"]>("reminder");
@@ -62,7 +63,6 @@ const Automation = () => {
     
     await saveTask(task);
     
-    // Reset form
     setNewTaskName("");
     setNewTaskType("reminder");
     setNewTaskDetails("");
@@ -81,7 +81,6 @@ const Automation = () => {
     
     await createWorkflowFromRequest(newWorkflowRequest, newWorkflowName);
     
-    // Reset form
     setNewWorkflowName("");
     setNewWorkflowRequest("");
   };
@@ -121,6 +120,10 @@ const Automation = () => {
     }
   };
   
+  const handleGoBack = () => {
+    navigate('/dashboard');
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -128,13 +131,23 @@ const Automation = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen flex flex-col w-full overflow-hidden"
     >
-      {/* Header */}
       <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
         <div className="container flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white flex items-center">
-            <BrainCircuit className="h-5 w-5 mr-2 text-purple-400" />
-            Automation Center
-          </h1>
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleGoBack}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="sr-only">Back to Dashboard</span>
+            </Button>
+            <h1 className="text-xl font-bold text-white flex items-center">
+              <BrainCircuit className="h-5 w-5 mr-2 text-purple-400" />
+              Automation Center
+            </h1>
+          </div>
           {!hasValidSubscription && (
             <Button 
               size="sm" 
@@ -147,7 +160,6 @@ const Automation = () => {
         </div>
       </header>
       
-      {/* Main content */}
       <div className="flex-1 container py-6">
         <Tabs defaultValue="tasks" className="w-full">
           <TabsList className="grid grid-cols-4 mb-8">
@@ -174,7 +186,6 @@ const Automation = () => {
           
           <TabsContent value="tasks" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Create new task */}
               <Card>
                 <CardHeader>
                   <CardTitle>Create New Task</CardTitle>
@@ -227,7 +238,6 @@ const Automation = () => {
                 </CardContent>
               </Card>
               
-              {/* AI Analysis */}
               <Card>
                 <CardHeader>
                   <CardTitle>AI Analysis</CardTitle>
@@ -284,7 +294,6 @@ const Automation = () => {
             
             <Separator className="my-6" />
             
-            {/* Task List */}
             <AutomationTaskList 
               tasks={tasks}
               onUpdateStatus={updateTaskStatus}
@@ -295,7 +304,6 @@ const Automation = () => {
           
           <TabsContent value="workflows" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Create new workflow */}
               <Card>
                 <CardHeader>
                   <CardTitle>Create New Workflow</CardTitle>
@@ -334,7 +342,6 @@ const Automation = () => {
                 </CardContent>
               </Card>
               
-              {/* Workflow tips */}
               <Card>
                 <CardHeader>
                   <CardTitle>Workflow Examples</CardTitle>
@@ -371,7 +378,6 @@ const Automation = () => {
             
             <Separator className="my-6" />
             
-            {/* Workflow List */}
             <AutomationWorkflowList 
               workflows={workflows}
               isLoading={isLoading}
@@ -380,7 +386,6 @@ const Automation = () => {
           </TabsContent>
           
           <TabsContent value="assistant">
-            {/* Automation Assistant */}
             <AutomationAssistant />
           </TabsContent>
           

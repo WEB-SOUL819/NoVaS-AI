@@ -46,7 +46,7 @@ export const getTimeBasedGreeting = (): string => {
 };
 
 /**
- * Get current date and time as a formatted string
+ * Get current date and time as a formatted string with 12-hour format
  */
 export const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -55,8 +55,10 @@ export const getCurrentDateTime = (): string => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
+    hour12: true
   });
 };
+
