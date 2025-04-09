@@ -1,5 +1,5 @@
 
-export type SubscriptionTier = 'free' | 'basic' | 'premium' | 'enterprise';
+export type SubscriptionTier = 'free' | 'basic' | 'premium' | 'enterprise' | 'admin';
 
 export interface SubscriptionPlan {
   id: string;
@@ -8,6 +8,7 @@ export interface SubscriptionPlan {
   price: number; // Price in Rupees
   features: string[];
   tier: SubscriptionTier;
+  isAdminOnly?: boolean;
 }
 
 export interface UserSubscription {
@@ -76,6 +77,22 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Advanced Analytics',
       'Team Collaboration',
       'White-labeling Options'
+    ]
+  },
+  {
+    id: 'admin',
+    name: 'Admin Plan',
+    description: 'Full system control for administrators',
+    price: 0,
+    tier: 'admin',
+    isAdminOnly: true,
+    features: [
+      'All Enterprise Features',
+      'System Administration',
+      'User Management',
+      'Role Management',
+      'Advanced Security Controls',
+      'Unrestricted Access to All Features'
     ]
   }
 ];

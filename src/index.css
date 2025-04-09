@@ -47,6 +47,84 @@
     --sidebar-ring: 226 100% 65%;
   }
 
+  .theme-light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 98%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 98%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 226 70% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 50% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 226 70% 55%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 226 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 50% 50%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 226 70% 55%;
+  }
+
+  .theme-stealth {
+    --background: 230 15% 5%;
+    --foreground: 0 0% 70%;
+
+    --card: 230 15% 7%;
+    --card-foreground: 0 0% 70%;
+
+    --popover: 230 15% 7%;
+    --popover-foreground: 0 0% 70%;
+
+    --primary: 220 50% 40%;
+    --primary-foreground: 0 0% 80%;
+
+    --secondary: 240 30% 30%;
+    --secondary-foreground: 0 0% 80%;
+
+    --muted: 230 15% 10%;
+    --muted-foreground: 0 0% 50%;
+
+    --accent: 230 15% 10%;
+    --accent-foreground: 0 0% 80%;
+
+    --destructive: 0 50% 40%;
+    --destructive-foreground: 0 0% 80%;
+
+    --border: 230 15% 15%;
+    --input: 230 15% 15%;
+    --ring: 220 50% 40%;
+
+    --sidebar-background: 230 15% 4%;
+    --sidebar-foreground: 0 0% 70%;
+    --sidebar-primary: 220 50% 40%;
+    --sidebar-primary-foreground: 0 0% 80%;
+    --sidebar-accent: 240 30% 30%;
+    --sidebar-accent-foreground: 0 0% 80%;
+    --sidebar-border: 230 15% 12%;
+    --sidebar-ring: 220 50% 40%;
+  }
+
   html {
     font-family: 'Inter', sans-serif;
     scroll-behavior: smooth;
@@ -54,11 +132,26 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+
+  body.dark-mode {
     background-image: 
       radial-gradient(circle at top left, rgba(67, 97, 238, 0.15), transparent 400px),
       radial-gradient(circle at bottom right, rgba(114, 9, 183, 0.15), transparent 400px);
     background-attachment: fixed;
-    overflow-x: hidden;
+  }
+
+  body.light-mode {
+    background-image: 
+      radial-gradient(circle at top left, rgba(67, 97, 238, 0.05), transparent 400px),
+      radial-gradient(circle at bottom right, rgba(114, 9, 183, 0.05), transparent 400px);
+    background-attachment: fixed;
+  }
+
+  body.stealth-mode {
+    background-image: none;
+    background-color: hsl(230, 15%, 5%);
   }
 
   /* Custom scrollbar */
@@ -94,6 +187,18 @@
     background: rgba(30, 30, 45, 0.7);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(67, 97, 238, 0.2);
+  }
+
+  .theme-light .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(67, 97, 238, 0.2);
+  }
+
+  .theme-stealth .glass-panel {
+    background: rgba(15, 15, 25, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(40, 40, 60, 0.4);
   }
   
   /* Layout spacing for improved readability */
@@ -202,4 +307,3 @@
     @apply bg-gray-500;
   }
 }
-

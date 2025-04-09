@@ -29,3 +29,34 @@ export const getUserTitle = (user: AuthUser | null): string => {
   }
   return "";
 };
+
+/**
+ * Checks if current time falls within certain hours for time-based greetings
+ */
+export const getTimeBasedGreeting = (): string => {
+  const hour = new Date().getHours();
+  
+  if (hour < 12) {
+    return "Good morning";
+  } else if (hour < 18) {
+    return "Good afternoon";
+  } else {
+    return "Good evening";
+  }
+};
+
+/**
+ * Get current date and time as a formatted string
+ */
+export const getCurrentDateTime = (): string => {
+  const now = new Date();
+  return now.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};

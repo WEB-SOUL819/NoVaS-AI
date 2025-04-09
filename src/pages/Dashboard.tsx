@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,14 +13,17 @@ import SystemDiagnostics from "@/components/SystemDiagnostics";
 import ModuleStatusCard from "@/components/ModuleStatusCard";
 import { processWithAI } from "@/utils/ai";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
+import { searchWikipedia } from "@/utils/wikipedia";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
-import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useDevMode } from "@/contexts/DevModeContext";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserGreeting } from "@/utils/userGreeting";
+import { getCurrentDateTime, getTimeBasedGreeting, getUserGreeting } from "@/utils/userGreeting";
+import { useTheme } from "@/contexts/ThemeContext";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +80,7 @@ const DEMO_MODULES: Module[] = [
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { theme } = useTheme();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -182,14 +187,50 @@ const Dashboard = () => {
     setSystemStatus(prev => ({ ...prev, isThinking: true }));
     
     try {
-      const aiResponse = await processWithAI([...messages, userMessage]);
+      // Check for local processing of simple commands
+      let response: {text: string} | null = null;
+      
+      // Handle date/time inquiries locally
+      if (messageText.toLowerCase().includes('time') || 
+          messageText.toLowerCase().includes('date') || 
+          messageText.toLowerCase().includes('day')) {
+        response = {
+          text: `The current date and time is: ${getCurrentDateTime()}`
+        };
+      }
+      // Handle greetings locally
+      else if (messageText.toLowerCase().includes('good morning') || 
+               messageText.toLowerCase().includes('good afternoon') ||
+               messageText.toLowerCase().includes('good evening')) {
+        response = {
+          text: `${getTimeBasedGreeting()}, ${user?.role === 'owner' ? 'Sir' : user?.name || 'User'}. How may I assist you today?`
+        };
+      }
+      // Handle Wikipedia searches with "what is X" or "who is X" queries
+      else if (messageText.toLowerCase().match(/what is|who is|tell me about|wikipedia/)) {
+        const query = messageText.replace(/what is|who is|tell me about|wikipedia/gi, '').trim();
+        if (query) {
+          try {
+            const wikipediaResult = await searchWikipedia(query);
+            response = { text: wikipediaResult };
+          } catch (error) {
+            console.error("Wikipedia search error:", error);
+            // Fall back to AI processing if Wikipedia search fails
+          }
+        }
+      }
+      
+      // If no local processing, use AI
+      if (!response) {
+        response = await processWithAI([...messages, userMessage]);
+      }
       
       setMessages(prev => 
         prev.map(msg => 
           msg.id === assistantPlaceholder.id
             ? {
                 ...msg,
-                content: aiResponse.text,
+                content: response?.text || "I'm sorry, I couldn't process your request.",
                 isProcessing: false,
               }
             : msg
@@ -200,7 +241,7 @@ const Dashboard = () => {
       
       if (voiceEnabled) {
         setSystemStatus(prev => ({ ...prev, isSpeaking: true }));
-        const audioBlob = await textToSpeech(aiResponse.text);
+        const audioBlob = await textToSpeech(response.text);
         if (audioBlob) {
           await playAudio(audioBlob);
         }
@@ -215,7 +256,7 @@ const Dashboard = () => {
             ? {
                 ...msg,
                 role: "error",
-                content: "I'm sorry, I encountered an error processing your request.",
+                content: "I'm sorry, I encountered an error processing your request. Please try again.",
                 isProcessing: false,
               }
             : msg
@@ -259,32 +300,24 @@ const Dashboard = () => {
             </h1>
           </div>
           
-          <nav className="hidden md:block">
-            <ul className="flex space-x-6">
-              <li>
-                <Link to="/dashboard" className="text-primary hover:text-white text-sm font-medium transition-colors">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/automation" className="text-gray-400 hover:text-white text-sm transition-colors">
-                  Automation
-                </Link>
-              </li>
-              <li>
-                <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">
-                  Profile
-                </Link>
-              </li>
-              <li>
-                <Link to="/settings" className="text-gray-400 hover:text-white text-sm transition-colors">
-                  Settings
-                </Link>
-              </li>
-            </ul>
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/dashboard" className="text-primary hover:text-white text-sm font-medium transition-colors">
+              Dashboard
+            </Link>
+            <Link to="/automation" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Automation
+            </Link>
+            <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Profile
+            </Link>
+            <Link to="/settings" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Settings
+            </Link>
+            <ThemeSwitcher />
           </nav>
           
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <ThemeSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">

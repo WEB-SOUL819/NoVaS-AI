@@ -18,7 +18,11 @@ import Settings from "./pages/Settings";
 import Automation from "./pages/Automation";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ContactUs from "./pages/ContactUs";
 import { useState, useEffect } from "react";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -37,65 +41,70 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <DevModeProvider>
-            {loading ? (
-              <SplashScreen />
-            ) : (
-              <>
-                <Toaster />
-                <Sonner />
-                <DevTools />
-                <BrowserRouter>
-                  <div className="flex flex-col min-h-screen">
-                    <div className="flex-grow">
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/auth" element={<Auth />} />
-                        <Route element={<AppLayout />}>
-                          <Route 
-                            path="/dashboard" 
-                            element={
-                              <ProtectedRoute>
-                                <Dashboard />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/profile" 
-                            element={
-                              <ProtectedRoute>
-                                <Profile />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/settings" 
-                            element={
-                              <ProtectedRoute>
-                                <Settings />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/automation" 
-                            element={
-                              <ProtectedRoute>
-                                <Automation />
-                              </ProtectedRoute>
-                            } 
-                          />
-                        </Route>
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
+        <ThemeProvider>
+          <AuthProvider>
+            <DevModeProvider>
+              {loading ? (
+                <SplashScreen />
+              ) : (
+                <>
+                  <Toaster />
+                  <Sonner />
+                  <DevTools />
+                  <BrowserRouter>
+                    <div className="flex flex-col min-h-screen">
+                      <div className="flex-grow">
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                          <Route path="/terms-of-service" element={<TermsOfService />} />
+                          <Route path="/contact-us" element={<ContactUs />} />
+                          <Route element={<AppLayout />}>
+                            <Route 
+                              path="/dashboard" 
+                              element={
+                                <ProtectedRoute>
+                                  <Dashboard />
+                                </ProtectedRoute>
+                              } 
+                            />
+                            <Route 
+                              path="/profile" 
+                              element={
+                                <ProtectedRoute>
+                                  <Profile />
+                                </ProtectedRoute>
+                              } 
+                            />
+                            <Route 
+                              path="/settings" 
+                              element={
+                                <ProtectedRoute>
+                                  <Settings />
+                                </ProtectedRoute>
+                              } 
+                            />
+                            <Route 
+                              path="/automation" 
+                              element={
+                                <ProtectedRoute>
+                                  <Automation />
+                                </ProtectedRoute>
+                              } 
+                            />
+                          </Route>
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
+                      <HynxFooter />
                     </div>
-                    <HynxFooter />
-                  </div>
-                </BrowserRouter>
-              </>
-            )}
-          </DevModeProvider>
-        </AuthProvider>
+                  </BrowserRouter>
+                </>
+              )}
+            </DevModeProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

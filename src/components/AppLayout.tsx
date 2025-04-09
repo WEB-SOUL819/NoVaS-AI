@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Footer from "./Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const AppLayout: React.FC = () => {
   const { isLoading } = useAuth();
@@ -17,10 +17,12 @@ const AppLayout: React.FC = () => {
   
   return (
     <div className="flex flex-col min-h-screen">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeSwitcher />
+      </div>
       <div className="flex-1">
         <Outlet />
       </div>
-      <Footer />
     </div>
   );
 };
