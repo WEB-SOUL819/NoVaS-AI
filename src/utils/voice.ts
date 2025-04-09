@@ -11,6 +11,8 @@ export async function textToSpeech(text: string): Promise<Blob | null> {
       return null;
     }
 
+    console.log("Using API key:", API_KEYS.ELEVEN_LABS_API_KEY);
+    
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_CONFIG.VOICE_ID}`,
       {

@@ -3,6 +3,7 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeSwitcher from "./ThemeSwitcher";
+import HynxFooter from "./HynxFooter";
 
 const AppLayout: React.FC = () => {
   const { isLoading } = useAuth();
@@ -24,6 +25,7 @@ const AppLayout: React.FC = () => {
       <div className="flex-1">
         <Outlet />
       </div>
+      <HynxFooter />
     </div>
   );
 };
