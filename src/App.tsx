@@ -29,10 +29,10 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading time for the splash screen
+    // Shorter loading time for the splash screen
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2500);
+    }, 1500); // Reduced from 2500ms to 1500ms
     
     return () => clearTimeout(timer);
   }, []);

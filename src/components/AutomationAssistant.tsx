@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,13 +32,11 @@ const AutomationAssistant = () => {
       timestamp: new Date()
     };
     
-    // Add user message to the conversation
     setMessages([...messages, userMessage]);
     setInput("");
     setIsProcessing(true);
     
     try {
-      // Create a placeholder for the assistant's response
       const placeholderMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -50,10 +47,8 @@ const AutomationAssistant = () => {
       
       setMessages(prev => [...prev, placeholderMessage]);
       
-      // Process with AI using the AUTOMATION_WORKFLOW prompt
       const response = await processWithAI([...messages, userMessage], "AUTOMATION_WORKFLOW");
       
-      // Replace the placeholder with the actual response
       setMessages(prev => 
         prev.map(msg => 
           msg.id === placeholderMessage.id
@@ -69,7 +64,6 @@ const AutomationAssistant = () => {
       console.error("Error processing with AI:", error);
       toast.error("Failed to process your request. Please try again.");
       
-      // Remove the placeholder message
       setMessages(prev => prev.filter(msg => !msg.isProcessing));
     } finally {
       setIsProcessing(false);

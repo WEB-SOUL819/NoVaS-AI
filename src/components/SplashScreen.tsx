@@ -9,10 +9,10 @@ const SplashScreen = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
-        const next = prev + Math.random() * 15;
+        const next = prev + Math.random() * 25; // Faster loading speed
         return next > 100 ? 100 : next;
       });
-    }, 200);
+    }, 150); // Shorter interval
     
     return () => clearInterval(interval);
   }, []);
@@ -22,13 +22,13 @@ const SplashScreen = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: "easeOut" }} // Faster animation
         className="text-center"
       >
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
+          transition={{ delay: 0.2, duration: 0.5 }} // Faster animation
           className="flex flex-col items-center"
         >
           <div className="relative mb-6">
@@ -36,21 +36,15 @@ const SplashScreen = () => {
               <motion.div 
                 initial={{ rotate: 0 }}
                 animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }} // Faster rotation
                 className="absolute inset-0 rounded-full border-t-2 border-blue-400"
-              />
-              <motion.div 
-                initial={{ rotate: 0 }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-r-2 border-purple-400"
               />
               <div className="text-white text-xl font-bold">NS</div>
             </div>
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.3 }} // Faster animation
               className="absolute -bottom-1 -right-1 bg-primary text-white text-xs px-2 py-0.5 rounded-full"
             >
               v{SYSTEM_CONFIG.SYSTEM_VERSION}
@@ -61,7 +55,7 @@ const SplashScreen = () => {
             className="text-2xl font-bold mb-2 glow-text"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
+            transition={{ delay: 0.3, duration: 0.3 }} // Faster animation
           >
             {SYSTEM_CONFIG.ASSISTANT_NAME}
           </motion.h1>
@@ -70,7 +64,7 @@ const SplashScreen = () => {
             className="text-sm text-muted-foreground mb-6"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
+            transition={{ delay: 0.4, duration: 0.3 }} // Faster animation
           >
             Nova Sentient Core System
           </motion.p>
@@ -80,7 +74,7 @@ const SplashScreen = () => {
           className="w-64 h-1.5 bg-muted rounded-full overflow-hidden"
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: 256 }}
-          transition={{ delay: 0.9, duration: 0.5 }}
+          transition={{ delay: 0.5, duration: 0.3 }} // Faster animation
         >
           <motion.div 
             className="h-full bg-gradient-to-r from-nova-500 to-purple-600"
@@ -93,7 +87,7 @@ const SplashScreen = () => {
           className="mt-2 text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
+          transition={{ delay: 0.6, duration: 0.3 }} // Faster animation
         >
           {loadingProgress < 100 ? "Initializing system..." : "System ready"}
         </motion.div>

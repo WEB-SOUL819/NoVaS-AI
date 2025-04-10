@@ -25,12 +25,13 @@ export async function processWithAI(
         lastMessageLower.includes('introduce yourself') || 
         lastMessageLower.includes('tell me about yourself') ||
         lastMessageLower.includes('what is your name')) {
-      const introText = `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by Arham Ali, Founder of Hynx Studios. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`;
+      const introText = `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`;
       
       return {
         text: introText,
         tokens: estimateTokenCount(introText),
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        fromCache: false
       };
     }
     
@@ -48,7 +49,8 @@ export async function processWithAI(
       return {
         text: responseText,
         tokens: estimateTokenCount(responseText),
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        fromCache: false
       };
     }
     
@@ -59,7 +61,8 @@ export async function processWithAI(
       return {
         text: responseText,
         tokens: estimateTokenCount(responseText),
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        fromCache: false
       };
     }
     

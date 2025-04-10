@@ -84,7 +84,7 @@ const Dashboard = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by Arham Ali, Founder of Hynx Studios. How can I assist you today?`,
+      content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant. How can I assist you today?`,
       timestamp: new Date(),
     },
   ]);
@@ -117,7 +117,7 @@ const Dashboard = () => {
         return [
           {
             ...prev[0],
-            content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by Arham Ali, Founder of Hynx Studios. How can I assist you today?`,
+            content: `${getUserGreeting(user)}. I'm ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant. How can I assist you today?`,
           },
           ...prev.slice(1)
         ];
@@ -209,7 +209,7 @@ const Dashboard = () => {
                messageText.toLowerCase().includes('good afternoon') ||
                messageText.toLowerCase().includes('good evening')) {
         response = {
-          text: `${getTimeBasedGreeting()}, ${user?.role === 'owner' ? 'Sir' : user?.name || 'User'}. How may I assist you today?`
+          text: `${getTimeBasedGreeting()}, ${user?.name || 'User'}. How may I assist you today?`
         };
       }
       // Handle introduction requests
@@ -217,10 +217,10 @@ const Dashboard = () => {
               messageText.toLowerCase().includes('introduce yourself') || 
               messageText.toLowerCase().includes('tell me about yourself')) {
         response = {
-          text: `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by Arham Ali, Founder of Hynx Studios. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
+          text: `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
         };
       }
-      // Check for Wikipedia queries with improved detection
+      // Check for Wikipedia queries
       else if (isWikipediaQuery(messageText)) {
         try {
           const searchTerm = extractWikipediaSearchTerm(messageText);
