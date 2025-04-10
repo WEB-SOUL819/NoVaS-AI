@@ -242,8 +242,7 @@ export function startSpeechRecognition(
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     onError(new Error("Speech recognition is not supported in this browser."));
     return { 
-      stop: () => {},
-      isListening: false
+      stop: () => {}
     };
   }
 
@@ -289,9 +288,7 @@ export function startSpeechRecognition(
     stop: () => {
       console.log("Stopping speech recognition...");
       recognition.stop();
-      isListening = false;
-    },
-    isListening: () => isListening
+    }
   };
 }
 
