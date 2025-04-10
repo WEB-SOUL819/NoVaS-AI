@@ -1,6 +1,8 @@
+
 import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS } from "@/config/env";
 import { AIResponse, Message, AutomationTask } from "@/types";
 import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from "./wikipedia";
+import { evalMathExpression } from "./mathUtils";
 
 /**
  * Processes a message through the Gemini AI API
@@ -16,6 +18,20 @@ export async function processWithAI(
     const lastMessage = messages[messages.length - 1]?.content || '';
     const lastMessageLower = lastMessage.toLowerCase();
     
+    // Handle introduction requests
+    if (lastMessageLower.includes('who are you') || 
+        lastMessageLower.includes('introduce yourself') || 
+        lastMessageLower.includes('tell me about yourself') ||
+        lastMessageLower.includes('what is your name')) {
+      const introText = `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant created by Arham Ali, Founder of Hynx Studios. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`;
+      
+      return {
+        text: introText,
+        tokens: estimateTokenCount(introText),
+        processingTime: Date.now() - startTime,
+      };
+    }
+    
     // Handle time/date requests locally
     if (lastMessageLower.includes('time') || lastMessageLower.includes('date') || lastMessageLower.includes('day')) {
       const now = new Date();
@@ -27,6 +43,17 @@ export async function processWithAI(
         responseText = `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`;
       }
       
+      return {
+        text: responseText,
+        tokens: estimateTokenCount(responseText),
+        processingTime: Date.now() - startTime,
+      };
+    }
+    
+    // Handle mathematical expressions
+    const mathResult = evalMathExpression(lastMessage);
+    if (mathResult !== null) {
+      const responseText = `The result of ${lastMessage} is ${mathResult}.`;
       return {
         text: responseText,
         tokens: estimateTokenCount(responseText),

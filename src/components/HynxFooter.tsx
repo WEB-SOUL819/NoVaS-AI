@@ -9,7 +9,7 @@ const HynxFooter: React.FC = () => {
     <footer className="w-full border-t border-gray-800 bg-black/30 backdrop-blur-sm py-2 px-4">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
         <div className="text-xs text-gray-500">
-          &copy; {currentYear} Hynx Studios | Created by Arham Ali, Founder of Hynx Studios
+          &copy; {currentYear} Hynx Studios
         </div>
         
         <div className="flex items-center space-x-4 mt-2 md:mt-0">
