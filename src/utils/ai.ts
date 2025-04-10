@@ -1,5 +1,4 @@
-
-import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS } from "@/config/env";
+import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS, SYSTEM_CONFIG } from "@/config/env";
 import { AIResponse, Message, AutomationTask } from "@/types";
 import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from "./wikipedia";
 import { evalMathExpression } from "./mathUtils";
