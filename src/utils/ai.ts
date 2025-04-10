@@ -2,6 +2,7 @@ import { AI_CONFIG, API_KEYS, SYSTEM_PROMPTS, SYSTEM_CONFIG } from "@/config/env
 import { AIResponse, Message, AutomationTask } from "@/types";
 import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from "./wikipedia";
 import { evalMathExpression } from "./mathUtils";
+import { sqliteCache } from "./sqliteCache";
 
 /**
  * Processes a message through the Gemini AI API
@@ -67,13 +68,45 @@ export async function processWithAI(
       
       if (searchTerm) {
         console.log("Extracted Wikipedia search term:", searchTerm);
+        
+        // Try to get from cache first
+        const cacheKey = `wikipedia:${searchTerm}`;
+        const cachedResult = await sqliteCache.get<string>(cacheKey);
+        
+        if (cachedResult) {
+          return {
+            text: cachedResult,
+            tokens: estimateTokenCount(cachedResult),
+            processingTime: Date.now() - startTime,
+          };
+        }
+        
+        // If not in cache, fetch from Wikipedia
         const wikipediaResult = await searchWikipedia(searchTerm);
+        
+        // Cache the result (24 hour TTL for Wikipedia data)
+        await sqliteCache.set(cacheKey, wikipediaResult, 24 * 60 * 60 * 1000);
+        
         return {
           text: wikipediaResult,
           tokens: estimateTokenCount(wikipediaResult),
           processingTime: Date.now() - startTime,
         };
       }
+    }
+
+    // Generate a cache key based on the conversation
+    const conversationKey = generateConversationCacheKey(messages, systemPrompt);
+    
+    // Check if we have a cached response
+    const cachedResponse = await sqliteCache.get<string>(conversationKey);
+    if (cachedResponse) {
+      return {
+        text: cachedResponse,
+        tokens: estimateTokenCount(cachedResponse),
+        processingTime: Date.now() - startTime,
+        fromCache: true
+      };
     }
 
     // Format messages for the API
@@ -107,6 +140,9 @@ export async function processWithAI(
       const tokens = estimateTokenCount(aiText);
       const processingTime = Date.now() - startTime;
 
+      // Cache the response (10 minute TTL for API responses)
+      await sqliteCache.set(conversationKey, aiText, 10 * 60 * 1000);
+
       return {
         text: aiText,
         tokens,
@@ -137,6 +173,26 @@ export async function processWithAI(
       processingTime: 0,
     };
   }
+}
+
+/**
+ * Generate a cache key for the conversation
+ */
+function generateConversationCacheKey(messages: Message[], systemPrompt: string): string {
+  // Generate a simple hash for the last few messages
+  // In a production system, you'd want a more sophisticated approach
+  const lastFewMessages = messages.slice(-3); // Consider last 3 messages for context
+  const conversationString = JSON.stringify(lastFewMessages) + systemPrompt;
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < conversationString.length; i++) {
+    const char = conversationString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  return `conversation:${hash}`;
 }
 
 /**
