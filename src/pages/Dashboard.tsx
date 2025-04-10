@@ -1,37 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import AssistantAvatar from "@/components/AssistantAvatar";
-import VoiceVisualizer from "@/components/VoiceVisualizer";
-import MessageBubble from "@/components/MessageBubble";
-import StatusIndicator from "@/components/StatusIndicator";
-import SystemDiagnostics from "@/components/SystemDiagnostics";
-import ModuleStatusCard from "@/components/ModuleStatusCard";
-import { processWithAI } from "@/utils/ai";
-import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
-import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
-import { SYSTEM_CONFIG } from "@/config/env";
-import { Message, Module, SystemStatus } from "@/types";
-import { Mic, MicOff, Send, VolumeX, Volume2, Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, Info, History } from "lucide-react";
+
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useDevMode } from "@/contexts/DevModeContext";
-import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { getCurrentDateTime, getTimeBasedGreeting, getUserGreeting } from "@/utils/userGreeting";
 import { useTheme } from "@/contexts/ThemeContext";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import StatusIndicator from "@/components/StatusIndicator";
+import { SYSTEM_CONFIG } from "@/config/env";
+import { Message, Module, SystemStatus } from "@/types";
+import { getUserGreeting } from "@/utils/userGreeting";
 
+// Import our new components
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import ChatInterface from "@/components/dashboard/ChatInterface";
+import SystemPanel from "@/components/dashboard/SystemPanel";
+
+// Demo modules for the system panel
 const DEMO_MODULES: Module[] = [
   {
     id: "voice-engine",
@@ -88,7 +72,7 @@ const Dashboard = () => {
       timestamp: new Date(),
     },
   ]);
-  const [inputMessage, setInputMessage] = useState("");
+  
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
     isOnline: true,
     isListening: false,
@@ -97,20 +81,10 @@ const Dashboard = () => {
     lastUpdated: new Date(),
     activeModules: DEMO_MODULES.filter(m => m.isActive),
   });
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [micEnabled, setMicEnabled] = useState(false);
-  const [recognizedText, setRecognizedText] = useState("");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
   const { isDevMode, userRole } = useDevMode();
   
-  const messageEndRef = useRef<HTMLDivElement>(null);
-  const speechRecognitionRef = useRef<{ stop: () => void } | null>(null);
-  
-  useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   useEffect(() => {
     setMessages(prev => {
       if (prev.length > 0 && prev[0].id === "welcome") {
@@ -125,170 +99,6 @@ const Dashboard = () => {
       return prev;
     });
   }, [user]);
-  
-  useEffect(() => {
-    if (micEnabled) {
-      setSystemStatus(prev => ({ ...prev, isListening: true }));
-      
-      speechRecognitionRef.current = startSpeechRecognition(
-        (text, isFinal) => {
-          setRecognizedText(text);
-          
-          if (isFinal) {
-            handleSubmit(text);
-            setRecognizedText("");
-          }
-        },
-        (error) => {
-          console.error("Speech recognition error:", error);
-          toast.error("Speech recognition error. Please try again.");
-          setMicEnabled(false);
-          setSystemStatus(prev => ({ ...prev, isListening: false }));
-        }
-      );
-    } else {
-      if (speechRecognitionRef.current) {
-        speechRecognitionRef.current.stop();
-        speechRecognitionRef.current = null;
-      }
-      setSystemStatus(prev => ({ ...prev, isListening: false }));
-    }
-    
-    return () => {
-      if (speechRecognitionRef.current) {
-        speechRecognitionRef.current.stop();
-      }
-    };
-  }, [micEnabled]);
-  
-  const handleSubmit = async (text?: string) => {
-    const messageText = text || inputMessage;
-    if (!messageText.trim()) return;
-    
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: messageText,
-      timestamp: new Date(),
-    };
-    
-    const assistantPlaceholder: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "assistant",
-      content: "...",
-      timestamp: new Date(),
-      isProcessing: true,
-    };
-    
-    setMessages(prev => [...prev, userMessage, assistantPlaceholder]);
-    setInputMessage("");
-    
-    setSystemStatus(prev => ({ ...prev, isThinking: true }));
-    
-    try {
-      // Check for local processing of simple commands
-      let response: {text: string} | null = null;
-      
-      // Handle date/time inquiries locally
-      if (messageText.toLowerCase().includes('time') || 
-          messageText.toLowerCase().includes('date') || 
-          messageText.toLowerCase().includes('day')) {
-        const now = new Date();
-        if (messageText.toLowerCase().includes('time')) {
-          response = {
-            text: `The current time is ${now.toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit', hour12: true})}.`
-          };
-        } else {
-          response = {
-            text: `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`
-          };
-        }
-      }
-      // Handle greetings locally
-      else if (messageText.toLowerCase().includes('good morning') || 
-               messageText.toLowerCase().includes('good afternoon') ||
-               messageText.toLowerCase().includes('good evening')) {
-        response = {
-          text: `${getTimeBasedGreeting()}, ${user?.name || 'User'}. How may I assist you today?`
-        };
-      }
-      // Handle introduction requests
-      else if (messageText.toLowerCase().includes('who are you') || 
-              messageText.toLowerCase().includes('introduce yourself') || 
-              messageText.toLowerCase().includes('tell me about yourself')) {
-        response = {
-          text: `I am ${SYSTEM_CONFIG.ASSISTANT_NAME}, an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
-        };
-      }
-      // Check for Wikipedia queries
-      else if (isWikipediaQuery(messageText)) {
-        try {
-          const searchTerm = extractWikipediaSearchTerm(messageText);
-          console.log("Extracted Wikipedia search term:", searchTerm);
-          if (searchTerm) {
-            const wikipediaResult = await searchWikipedia(searchTerm);
-            response = { text: wikipediaResult };
-          }
-        } catch (error) {
-          console.error("Wikipedia search error:", error);
-          // Fall back to AI processing if Wikipedia search fails
-        }
-      }
-      
-      // If no local processing, use AI
-      if (!response) {
-        response = await processWithAI([...messages, userMessage]);
-      }
-      
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === assistantPlaceholder.id
-            ? {
-                ...msg,
-                content: response?.text || "I'm sorry, I couldn't process your request.",
-                isProcessing: false,
-              }
-            : msg
-        )
-      );
-      
-      setSystemStatus(prev => ({ ...prev, isThinking: false }));
-      
-      if (voiceEnabled) {
-        setSystemStatus(prev => ({ ...prev, isSpeaking: true }));
-        console.log("Attempting text-to-speech with:", response.text);
-        const audioBlob = await textToSpeech(response.text);
-        console.log("TTS returned audioBlob:", !!audioBlob);
-        
-        if (audioBlob) {
-          await playAudio(audioBlob);
-        } else {
-          console.error("No audio blob returned from textToSpeech");
-        }
-        
-        setSystemStatus(prev => ({ ...prev, isSpeaking: false }));
-      }
-    } catch (error) {
-      console.error("Error processing message:", error);
-      
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === assistantPlaceholder.id
-            ? {
-                ...msg,
-                role: "error",
-                content: "I'm sorry, I encountered an error processing your request. Please try again.",
-                isProcessing: false,
-              }
-            : msg
-        )
-      );
-      
-      setSystemStatus(prev => ({ ...prev, isThinking: false, isSpeaking: false }));
-      
-      toast.error("Error processing message. Please try again.");
-    }
-  };
   
   const handleSignOut = async () => {
     try {
@@ -306,90 +116,11 @@ const Dashboard = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen flex flex-col w-full overflow-hidden"
     >
-      <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
-        <div className="container flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <AssistantAvatar size="sm" />
-            <h1 className="text-xl font-bold text-white">
-              {SYSTEM_CONFIG.ASSISTANT_NAME}
-              <span className="text-xs text-gray-400 ml-2">v{SYSTEM_CONFIG.SYSTEM_VERSION}</span>
-              {isDevMode && (
-                <span className="ml-2 text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
-                  {userRole}
-                </span>
-              )}
-            </h1>
-          </div>
-          
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/dashboard" className="text-primary hover:text-white text-sm font-medium transition-colors">
-              Dashboard
-            </Link>
-            <Link to="/automation" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Automation
-            </Link>
-            <Link to="/history" className="text-gray-400 hover:text-white text-sm transition-colors">
-              History
-            </Link>
-            <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Profile
-            </Link>
-            <Link to="/settings" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Settings
-            </Link>
-            <ThemeSwitcher />
-          </nav>
-          
-          <div className="md:hidden flex items-center space-x-2">
-            <ThemeSwitcher />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Navigation</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/dashboard" className="cursor-pointer">
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/automation" className="cursor-pointer">
-                    <BrainCircuit className="mr-2 h-4 w-4" />
-                    Automation
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/history" className="cursor-pointer">
-                    <History className="mr-2 h-4 w-4" />
-                    History
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="cursor-pointer">
-                    <SettingsIcon className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader 
+        isDevMode={isDevMode} 
+        userRole={userRole} 
+        onSignOut={handleSignOut} 
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <motion.div 
@@ -402,136 +133,19 @@ const Dashboard = () => {
             <StatusIndicator status={systemStatus} />
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex flex-col space-y-3 max-w-3xl mx-auto">
-              {messages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <MessageBubble message={message} />
-                </motion.div>
-              ))}
-              <div ref={messageEndRef} />
-            </div>
-          </div>
-          
-          {micEnabled && recognizedText && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 bg-gray-800 bg-opacity-50 mx-4 mb-4 rounded-lg"
-            >
-              <p className="text-sm text-gray-300 italic">{recognizedText}</p>
-            </motion.div>
-          )}
-          
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="p-4 border-t border-gray-800 glass-panel"
-          >
-            <div className="flex items-end space-x-2 max-w-3xl mx-auto">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setMicEnabled(!micEnabled)}
-                className={micEnabled ? "text-nova-500" : "text-gray-400"}
-              >
-                {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-              </Button>
-              
-              <Textarea
-                placeholder="Type your message..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                className="resize-none min-h-[60px]"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-              />
-              
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setVoiceEnabled(!voiceEnabled)}
-                className={voiceEnabled ? "text-purple-500" : "text-gray-400"}
-              >
-                {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              </Button>
-              
-              <Button onClick={() => handleSubmit()}>
-                <Send className="h-4 w-4 mr-2" />
-                Send
-              </Button>
-            </div>
-          </motion.div>
+          <ChatInterface 
+            messages={messages}
+            setMessages={setMessages}
+            systemStatus={systemStatus}
+            setSystemStatus={setSystemStatus}
+            user={user}
+          />
         </motion.div>
         
-        <motion.div 
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="w-96 border-l border-gray-800 overflow-y-auto p-4 hidden lg:block"
-        >
-          <Tabs defaultValue="status">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="status">System Status</TabsTrigger>
-              <TabsTrigger value="modules">Modules</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="status" className="space-y-4">
-              <div className="flex justify-center py-4">
-                <AssistantAvatar 
-                  size="lg" 
-                  isListening={systemStatus.isListening}
-                  isSpeaking={systemStatus.isSpeaking}
-                  isThinking={systemStatus.isThinking}
-                />
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <SystemDiagnostics />
-              
-              <div className="mt-4">
-                <h3 className="text-xs font-bold text-gray-300 mb-2">
-                  AUDIO STATUS
-                </h3>
-                <div className="flex justify-between">
-                  <div className="w-5/12">
-                    <p className="text-xs text-gray-400 mb-1">Input</p>
-                    <VoiceVisualizer 
-                      isActive={systemStatus.isListening} 
-                      variant="input"
-                    />
-                  </div>
-                  <div className="w-5/12">
-                    <p className="text-xs text-gray-400 mb-1">Output</p>
-                    <VoiceVisualizer 
-                      isActive={systemStatus.isSpeaking} 
-                      variant="output" 
-                    />
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="modules">
-              <div className="grid grid-cols-1 gap-3">
-                {DEMO_MODULES.map((module) => (
-                  <ModuleStatusCard key={module.id} module={module} />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+        <SystemPanel 
+          systemStatus={systemStatus}
+          modules={DEMO_MODULES}
+        />
       </div>
     </motion.div>
   );
