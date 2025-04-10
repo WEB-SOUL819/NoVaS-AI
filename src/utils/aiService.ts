@@ -79,7 +79,8 @@ export async function processWithAI(
           return {
             text: cachedResult,
             tokens: estimateTokenCount(cachedResult),
-            processingTime: Date.now() - startTime
+            processingTime: Date.now() - startTime,
+            fromCache: true
           };
         }
         
@@ -92,7 +93,8 @@ export async function processWithAI(
         return {
           text: wikipediaResult,
           tokens: estimateTokenCount(wikipediaResult),
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
+          fromCache: false
         };
       }
     }
@@ -106,7 +108,8 @@ export async function processWithAI(
       return {
         text: cachedResult,
         tokens: estimateTokenCount(cachedResult),
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        fromCache: true
       };
     }
 
@@ -147,7 +150,8 @@ export async function processWithAI(
       return {
         text: aiText,
         tokens,
-        processingTime
+        processingTime,
+        fromCache: false
       };
     } catch (error) {
       console.error("Error calling AI API:", error);
@@ -156,14 +160,16 @@ export async function processWithAI(
         return {
           text: "Hello! How can I assist you today?",
           tokens: 8,
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
+          fromCache: false
         };
       }
       
       return {
         text: "I'm sorry, I'm having trouble connecting to my knowledge base right now. Is there something simple I can help you with?",
         tokens: 20,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        fromCache: false
       };
     }
   } catch (error) {
@@ -171,7 +177,8 @@ export async function processWithAI(
     return {
       text: "I'm sorry, I encountered an error while processing your request.",
       tokens: 0,
-      processingTime: 0
+      processingTime: 0,
+      fromCache: false
     };
   }
 }

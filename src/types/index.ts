@@ -1,3 +1,4 @@
+
 // User Profile Type
 export interface UserProfile {
   id?: string;
@@ -63,6 +64,7 @@ export interface AIResponse {
   text: string;
   tokens: number;
   processingTime: number;
+  fromCache?: boolean;
 }
 
 // System Modes
