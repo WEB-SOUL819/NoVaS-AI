@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { AutomationTask, AutomationWorkflow } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { analyzeForAutomation, generateAutomationWorkflow } from "@/utils/ai";
+import { analyzeForAutomation, generateAutomationWorkflow, saveTaskToSupabase, saveWorkflowToSupabase } from "@/utils/automationUtils";
 import { toast } from "sonner";
 
 export const useAutomation = () => {
@@ -26,16 +26,41 @@ export const useAutomation = () => {
     try {
       setIsLoading(true);
       
-      // In a real implementation, this would fetch from the database
-      // For now, we'll use localStorage as a temporary solution
-      const storedTasks = localStorage.getItem(`automation_tasks_${user.id}`);
-      if (storedTasks) {
-        const parsedTasks = JSON.parse(storedTasks);
-        // Convert string dates back to Date objects
-        const formattedTasks = parsedTasks.map((task: any) => ({
-          ...task,
-          createdAt: new Date(task.createdAt),
-          completedAt: task.completedAt ? new Date(task.completedAt) : undefined
+      // Try to fetch from Supabase first
+      const { data, error } = await supabase
+        .from('automation_tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.warn("Could not fetch from Supabase, using localStorage fallback:", error);
+        
+        // Fallback to localStorage
+        const storedTasks = localStorage.getItem(`automation_tasks_${user.id}`);
+        if (storedTasks) {
+          const parsedTasks = JSON.parse(storedTasks);
+          // Convert string dates back to Date objects
+          const formattedTasks = parsedTasks.map((task: any) => ({
+            ...task,
+            createdAt: new Date(task.createdAt),
+            completedAt: task.completedAt ? new Date(task.completedAt) : undefined
+          }));
+          setTasks(formattedTasks);
+        }
+      } else if (data) {
+        // Format Supabase data
+        const formattedTasks = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          type: item.type as "reminder" | "schedule" | "trigger" | "workflow",
+          details: item.details,
+          status: item.status as "pending" | "active" | "completed" | "failed",
+          createdAt: new Date(item.created_at),
+          completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
+          schedule: item.schedule,
+          triggerCondition: item.trigger_condition,
+          actions: item.actions ? JSON.parse(item.actions) : undefined
         }));
         setTasks(formattedTasks);
       }
@@ -53,16 +78,39 @@ export const useAutomation = () => {
     try {
       setIsLoading(true);
       
-      // In a real implementation, this would fetch from the database
-      // For now, we'll use localStorage as a temporary solution
-      const storedWorkflows = localStorage.getItem(`automation_workflows_${user.id}`);
-      if (storedWorkflows) {
-        const parsedWorkflows = JSON.parse(storedWorkflows);
-        // Convert string dates back to Date objects
-        const formattedWorkflows = parsedWorkflows.map((workflow: any) => ({
-          ...workflow,
-          createdAt: new Date(workflow.createdAt),
-          updatedAt: new Date(workflow.updatedAt)
+      // Try to fetch from Supabase first
+      const { data, error } = await supabase
+        .from('automation_workflows')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.warn("Could not fetch from Supabase, using localStorage fallback:", error);
+        
+        // Fallback to localStorage
+        const storedWorkflows = localStorage.getItem(`automation_workflows_${user.id}`);
+        if (storedWorkflows) {
+          const parsedWorkflows = JSON.parse(storedWorkflows);
+          // Convert string dates back to Date objects
+          const formattedWorkflows = parsedWorkflows.map((workflow: any) => ({
+            ...workflow,
+            createdAt: new Date(workflow.createdAt),
+            updatedAt: new Date(workflow.updatedAt)
+          }));
+          setWorkflows(formattedWorkflows);
+        }
+      } else if (data) {
+        // Format Supabase data
+        const formattedWorkflows = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          triggers: JSON.parse(item.triggers),
+          actions: JSON.parse(item.actions),
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+          isActive: item.is_active
         }));
         setWorkflows(formattedWorkflows);
       }
@@ -75,14 +123,20 @@ export const useAutomation = () => {
   };
 
   const saveTask = async (task: AutomationTask) => {
-    if (!user) return;
+    if (!user) return null;
     
     try {
+      // Add to local state
       const updatedTasks = [...tasks, task];
       setTasks(updatedTasks);
       
-      // Save to localStorage (temporary solution)
-      localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      // Try to save to Supabase
+      const saved = await saveTaskToSupabase(user.id, task);
+      
+      if (!saved) {
+        // Fallback to localStorage
+        localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      }
       
       toast.success("Automation task created");
       return task;
@@ -94,14 +148,20 @@ export const useAutomation = () => {
   };
 
   const saveWorkflow = async (workflow: AutomationWorkflow) => {
-    if (!user) return;
+    if (!user) return null;
     
     try {
+      // Add to local state
       const updatedWorkflows = [...workflows, workflow];
       setWorkflows(updatedWorkflows);
       
-      // Save to localStorage (temporary solution)
-      localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      // Try to save to Supabase
+      const saved = await saveWorkflowToSupabase(user.id, workflow);
+      
+      if (!saved) {
+        // Fallback to localStorage
+        localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      }
       
       toast.success("Automation workflow created");
       return workflow;
@@ -116,6 +176,7 @@ export const useAutomation = () => {
     if (!user) return;
     
     try {
+      // Update in local state
       const updatedTasks = tasks.map(task => 
         task.id === taskId 
           ? { 
@@ -128,8 +189,21 @@ export const useAutomation = () => {
       
       setTasks(updatedTasks);
       
-      // Save to localStorage (temporary solution)
-      localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      // Try to update in Supabase
+      const { error } = await supabase
+        .from('automation_tasks')
+        .update({ 
+          status, 
+          completed_at: status === 'completed' ? new Date().toISOString() : null 
+        })
+        .eq('id', taskId);
+      
+      if (error) {
+        console.warn("Could not update in Supabase, using localStorage fallback:", error);
+        
+        // Fallback to localStorage
+        localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      }
       
       toast.success(`Task ${status}`);
     } catch (error) {
@@ -142,6 +216,7 @@ export const useAutomation = () => {
     if (!user) return;
     
     try {
+      // Update in local state
       const updatedWorkflows = workflows.map(workflow => 
         workflow.id === workflowId 
           ? { 
@@ -154,8 +229,21 @@ export const useAutomation = () => {
       
       setWorkflows(updatedWorkflows);
       
-      // Save to localStorage (temporary solution)
-      localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      // Try to update in Supabase
+      const { error } = await supabase
+        .from('automation_workflows')
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', workflowId);
+      
+      if (error) {
+        console.warn("Could not update in Supabase, using localStorage fallback:", error);
+        
+        // Fallback to localStorage
+        localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      }
       
       toast.success(`Workflow ${isActive ? 'activated' : 'deactivated'}`);
     } catch (error) {
@@ -168,11 +256,22 @@ export const useAutomation = () => {
     if (!user) return;
     
     try {
+      // Remove from local state
       const updatedTasks = tasks.filter(task => task.id !== taskId);
       setTasks(updatedTasks);
       
-      // Save to localStorage (temporary solution)
-      localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      // Try to delete from Supabase
+      const { error } = await supabase
+        .from('automation_tasks')
+        .delete()
+        .eq('id', taskId);
+      
+      if (error) {
+        console.warn("Could not delete from Supabase, using localStorage fallback:", error);
+        
+        // Fallback to localStorage
+        localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      }
       
       toast.success("Task deleted");
     } catch (error) {

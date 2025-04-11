@@ -1,17 +1,18 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Send, VolumeX, Volume2 } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Search, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceVisualizer from "@/components/VoiceVisualizer";
 import { Message } from "@/types";
 import { toast } from "sonner";
-import { processWithAI } from "@/utils/ai";
+import { processWithAI, isWebSearchQuery } from "@/utils/ai";
+import { searchWeb, extractSearchQuery } from "@/utils/webSearch";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
 import { getCurrentDateTime, getTimeBasedGreeting } from "@/utils/userGreeting";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -79,6 +80,70 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, [micEnabled, setSystemStatus]);
 
+  const saveMessageToSupabase = async (message: Message) => {
+    if (!user) return;
+    
+    try {
+      // Create a conversation if this is the first message
+      if (messages.length === 0 || messages.length === 1) {
+        const { data: conversation, error: convError } = await supabase
+          .from('conversations')
+          .insert([
+            { user_id: user.id, title: message.content.substring(0, 50) }
+          ])
+          .select('id')
+          .single();
+          
+        if (convError) throw convError;
+        
+        const conversationId = conversation.id;
+        
+        // Insert the message
+        const { error: msgError } = await supabase
+          .from('messages')
+          .insert([
+            { 
+              conversation_id: conversationId,
+              role: message.role,
+              content: message.content,
+              timestamp: message.timestamp
+            }
+          ]);
+          
+        if (msgError) throw msgError;
+      } else {
+        // Get the most recent conversation
+        const { data: conversations, error: convError } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (convError && convError.code !== 'PGRST116') throw convError;
+        
+        if (conversations) {
+          const { error: msgError } = await supabase
+            .from('messages')
+            .insert([
+              { 
+                conversation_id: conversations.id,
+                role: message.role,
+                content: message.content,
+                timestamp: message.timestamp
+              }
+            ]);
+            
+          if (msgError) throw msgError;
+        }
+      }
+    } catch (error) {
+      console.error("Error saving message to Supabase:", error);
+      // Don't show toast error to avoid interrupting the chat experience
+    }
+  };
+
   const handleSubmit = async (text?: string) => {
     const messageText = text || inputMessage;
     if (!messageText.trim()) return;
@@ -100,6 +165,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     setMessages(prev => [...prev, userMessage, assistantPlaceholder]);
     setInputMessage("");
+    
+    saveMessageToSupabase(userMessage);
     
     setSystemStatus(prev => ({ ...prev, isThinking: true }));
     
@@ -138,6 +205,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           text: `I am an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
         };
       }
+      // Check for web search queries
+      else if (isWebSearchQuery(messageText)) {
+        try {
+          const searchQuery = extractSearchQuery(messageText);
+          console.log("Extracted web search query:", searchQuery);
+          
+          if (searchQuery) {
+            const webResult = await searchWeb(searchQuery);
+            response = { text: webResult };
+          }
+        } catch (error) {
+          console.error("Web search error:", error);
+          // Fall back to AI processing if web search fails
+        }
+      }
       // Check for Wikipedia queries
       else if (isWikipediaQuery(messageText)) {
         try {
@@ -158,17 +240,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         response = await processWithAI([...messages, userMessage]);
       }
       
+      const assistantMessage = {
+        ...assistantPlaceholder,
+        content: response?.text || "I'm sorry, I couldn't process your request.",
+        isProcessing: false,
+      };
+      
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === assistantPlaceholder.id
-            ? {
-                ...msg,
-                content: response?.text || "I'm sorry, I couldn't process your request.",
-                isProcessing: false,
-              }
-            : msg
+          msg.id === assistantPlaceholder.id ? assistantMessage : msg
         )
       );
+      
+      saveMessageToSupabase(assistantMessage);
       
       setSystemStatus(prev => ({ ...prev, isThinking: false }));
       
@@ -248,6 +332,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             size="icon"
             onClick={() => setMicEnabled(!micEnabled)}
             className={micEnabled ? "text-nova-500" : "text-gray-400"}
+            title={micEnabled ? "Turn off voice input" : "Turn on voice input"}
           >
             {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
           </Button>
@@ -270,6 +355,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             size="icon"
             onClick={() => setVoiceEnabled(!voiceEnabled)}
             className={voiceEnabled ? "text-purple-500" : "text-gray-400"}
+            title={voiceEnabled ? "Turn off voice output" : "Turn on voice output"}
           >
             {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
@@ -278,6 +364,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <Send className="h-4 w-4 mr-2" />
             Send
           </Button>
+        </div>
+        
+        <div className="flex justify-center mt-2">
+          <div className="text-xs text-gray-500 flex items-center">
+            <Globe className="h-3 w-3 mr-1" />
+            <span>Web knowledge enabled • </span>
+            <Search className="h-3 w-3 mx-1" />
+            <span>Try asking "What's happening in the world today?"</span>
+          </div>
         </div>
       </motion.div>
     </div>
