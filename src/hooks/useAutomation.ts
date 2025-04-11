@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { analyzeForAutomation, generateAutomationWorkflow } from "@/utils/automationUtils";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 export const useAutomation = () => {
   const { user } = useAuth();
@@ -126,7 +127,7 @@ export const useAutomation = () => {
     if (!user) return null;
     
     try {
-      // Format task for Supabase
+      // Format task for Supabase - convert actions to JSON-compatible format
       const taskData = {
         user_id: user.id,
         name: task.name,
@@ -135,7 +136,8 @@ export const useAutomation = () => {
         status: task.status,
         schedule: task.schedule,
         trigger_condition: task.triggerCondition,
-        actions: task.actions ? task.actions : null
+        // Convert actions array to JSON-compatible format
+        actions: task.actions ? JSON.stringify(task.actions) as unknown as Json : null
       };
       
       // Save to Supabase
@@ -174,13 +176,14 @@ export const useAutomation = () => {
     if (!user) return null;
     
     try {
-      // Format workflow for Supabase
+      // Format workflow for Supabase - convert actions and triggers to JSON-compatible format
       const workflowData = {
         user_id: user.id,
         name: workflow.name,
         description: workflow.description,
-        triggers: workflow.triggers,
-        actions: workflow.actions,
+        // Convert triggers and actions arrays to JSON-compatible format
+        triggers: JSON.stringify(workflow.triggers) as unknown as Json,
+        actions: JSON.stringify(workflow.actions) as unknown as Json,
         is_active: workflow.isActive
       };
       

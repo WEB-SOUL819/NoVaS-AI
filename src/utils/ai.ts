@@ -10,7 +10,7 @@ import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from ".
 export function isWebSearchQuery(text: string): boolean {
   const lowerText = text.toLowerCase();
   
-  // Check for current events queries
+  // Check for explicit current events queries
   if (lowerText.includes('happening now') || 
       lowerText.includes('happening today') || 
       lowerText.includes('happening in the world') || 
@@ -85,6 +85,41 @@ export const AUTOMATION_KNOWLEDGE_BASES = [
     id: "ai-automation",
     name: "AI-Powered Automation",
     description: "Using artificial intelligence to enhance automation capabilities"
+  },
+  {
+    id: "computer-vision",
+    name: "Computer Vision",
+    description: "Image and video processing for automation triggers and actions"
+  },
+  {
+    id: "process-automation",
+    name: "Process Automation",
+    description: "Automating repetitive business and personal processes"
+  },
+  {
+    id: "trigger-management",
+    name: "Trigger Management",
+    description: "Event-based triggers and conditions for automation workflows"
+  },
+  {
+    id: "device-integration",
+    name: "Device Integration",
+    description: "Connecting various devices and platforms into unified automation systems"
+  },
+  {
+    id: "security-automation",
+    name: "Security Automation",
+    description: "Automated security protocols and responses to security events"
+  },
+  {
+    id: "energy-management",
+    name: "Energy Management",
+    description: "Smart energy usage optimization and scheduling"
+  },
+  {
+    id: "health-monitoring",
+    name: "Health Monitoring",
+    description: "Automated health tracking and notification systems"
   }
 ];
 

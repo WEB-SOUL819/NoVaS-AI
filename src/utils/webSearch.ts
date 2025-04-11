@@ -1,4 +1,3 @@
-
 /**
  * Web search utility to find information on the internet
  */
@@ -60,39 +59,37 @@ function isCurrentEventsQuery(query: string): boolean {
  */
 async function searchCurrentEvents(): Promise<string> {
   try {
-    // For demo purposes, we'll return a simulated news summary
+    // For demo purposes, we'll return simulated news content
     // In production, this would connect to a news API
-    const today = new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
     
     return `
-# Latest News Headlines (${today})
+# Latest News Headlines
 
 ## Global News
 - World leaders gather for climate summit to discuss new emissions targets
 - Major tech companies announce AI ethics coalition to promote responsible development
 - Global economy shows signs of recovery with positive growth forecasts
+- International space station celebrates 25 years in orbit with new research milestone
 
 ## Technology
 - New smartphone models unveiled with advanced AI capabilities and improved battery life
 - Major security vulnerability discovered in popular software, patches being deployed
 - Breakthrough in quantum computing achieves new processing milestone
+- Tech startup raises record funding for sustainable energy storage solution
 
 ## Science
 - Scientists report promising results from clinical trials of new treatment for Alzheimer's
 - Space telescope discovers potentially habitable exoplanet 40 light years from Earth
 - Research team develops new sustainable material that could replace plastics
+- International collaboration maps complete human genome with unprecedented detail
 
 ## Business
 - Stock markets hit record highs amid positive economic indicators
 - Major merger announced between leading companies in the transportation sector
 - Several tech startups achieve unicorn status in latest funding rounds
+- New economic policies introduced to address inflation concerns
 
-Information is based on simulated current events and may not reflect actual real-time news.
+Information is based on simulated current events for demonstration purposes.
 `;
   } catch (error) {
     console.error("Error fetching current events:", error);
