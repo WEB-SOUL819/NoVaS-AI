@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { processWithAI } from "@/utils/ai";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
-import { getCurrentDateTime } from "@/utils/userGreeting";
+import { getCurrentDateTime, getTimeBasedGreeting } from "@/utils/userGreeting";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -111,14 +111,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (messageText.toLowerCase().includes('time') || 
           messageText.toLowerCase().includes('date') || 
           messageText.toLowerCase().includes('day')) {
-        const now = new Date();
+        const dateTimeInfo = getCurrentDateTime();
         if (messageText.toLowerCase().includes('time')) {
           response = {
-            text: `The current time is ${now.toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit', hour12: true})}.`
+            text: `The current time is ${new Date().toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit', hour12: true})}.`
           };
         } else {
           response = {
-            text: `Today is ${now.toLocaleDateString()} (${now.toLocaleString('en-US', { weekday: 'long' })}).`
+            text: `Today is ${dateTimeInfo.formatted.split(',')[0]} (${new Date().toLocaleDateString()}).`
           };
         }
       }
@@ -127,7 +127,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                messageText.toLowerCase().includes('good afternoon') ||
                messageText.toLowerCase().includes('good evening')) {
         response = {
-          text: `${getCurrentDateTime().greeting}, ${user?.name || 'User'}. How may I assist you today?`
+          text: `${getTimeBasedGreeting()}, ${user?.name || 'User'}. How may I assist you today?`
         };
       }
       // Handle introduction requests
