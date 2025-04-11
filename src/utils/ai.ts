@@ -18,7 +18,10 @@ export function isWebSearchQuery(text: string): boolean {
       lowerText.includes('current events') ||
       lowerText.includes('today\'s news') ||
       lowerText.includes('breaking news') ||
-      lowerText.includes('recent events')) {
+      lowerText.includes('recent events') ||
+      lowerText.includes('whats happening') ||
+      lowerText.includes('what is happening') ||
+      lowerText.includes('world news')) {
     return true;
   }
   
@@ -49,7 +52,7 @@ export function isWebSearchQuery(text: string): boolean {
   return false;
 }
 
-// Add knowledge bases for automation
+// Add knowledge bases for automation and news
 export const AUTOMATION_KNOWLEDGE_BASES = [
   {
     id: "home-automation",
@@ -120,6 +123,41 @@ export const AUTOMATION_KNOWLEDGE_BASES = [
     id: "health-monitoring",
     name: "Health Monitoring",
     description: "Automated health tracking and notification systems"
+  },
+  {
+    id: "news-tracking",
+    name: "News Tracking",
+    description: "Current events monitoring and reporting from global sources"
+  },
+  {
+    id: "financial-news",
+    name: "Financial News",
+    description: "Market updates, economic indicators, and business developments"
+  },
+  {
+    id: "tech-trends",
+    name: "Technology Trends",
+    description: "Latest innovations, product launches, and technology developments"
+  },
+  {
+    id: "global-affairs",
+    name: "Global Affairs",
+    description: "International relations, political developments, and world events"
+  },
+  {
+    id: "science-news",
+    name: "Science News",
+    description: "Scientific discoveries, research breakthroughs, and advancements"
+  },
+  {
+    id: "sports-updates",
+    name: "Sports Updates",
+    description: "Latest scores, player news, and sporting events worldwide"
+  },
+  {
+    id: "entertainment-news",
+    name: "Entertainment News",
+    description: "Celebrity updates, movie releases, and entertainment industry news"
   }
 ];
 

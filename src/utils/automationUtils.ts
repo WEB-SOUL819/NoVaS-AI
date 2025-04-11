@@ -1,9 +1,9 @@
-
 import { SYSTEM_PROMPTS } from "@/config/env";
 import { Message, AutomationTask, AutomationWorkflow } from "@/types";
 import { processWithAI } from "./aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { AUTOMATION_KNOWLEDGE_BASES } from "./ai";
+import { toast } from "sonner";
 
 /**
  * Analyze text and extract potential automation tasks
@@ -110,7 +110,8 @@ function analyzeTextLocally(text: string): AutomationTask[] {
       dateString = dateMatch[1].toLowerCase();
     }
     
-    tasks.push({
+    // Create the task
+    const reminderTask: AutomationTask = {
       id: crypto.randomUUID(),
       name: `Reminder: ${taskDescription}`,
       type: "reminder",
@@ -118,7 +119,12 @@ function analyzeTextLocally(text: string): AutomationTask[] {
       status: "pending",
       createdAt: new Date(),
       schedule: `${dateString} ${timeString}`
-    });
+    };
+    
+    tasks.push(reminderTask);
+    
+    // Actually set the device alarm or reminder if possible
+    setDeviceAlarm(taskDescription, timeMatch, dateMatch);
   }
   
   // Check for scheduled task patterns
@@ -159,6 +165,157 @@ function analyzeTextLocally(text: string): AutomationTask[] {
   }
   
   return tasks;
+}
+
+/**
+ * Actually set an alarm or reminder on the device if possible
+ */
+function setDeviceAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
+  try {
+    // Check if notification API is available
+    if ('Notification' in window) {
+      // Request permission if not already granted
+      if (Notification.permission !== 'granted') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            scheduleNotification(description, timeMatch, dateMatch);
+          }
+        });
+      } else {
+        scheduleNotification(description, timeMatch, dateMatch);
+      }
+    }
+    
+    // Also try to use the alarm API if available (Chrome extensions, PWAs)
+    if ('alarm' in chrome) {
+      scheduleChromiumAlarm(description, timeMatch, dateMatch);
+    }
+    
+    toast.success("Alarm has been set on your device");
+  } catch (error) {
+    console.error("Error setting device alarm:", error);
+    toast.error("Could not set alarm on your device. Permission may be required.");
+  }
+}
+
+/**
+ * Schedule a notification at the specified time
+ */
+function scheduleNotification(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
+  // Calculate when to show the notification
+  const targetTime = calculateTargetTime(timeMatch, dateMatch);
+  
+  // Calculate delay in milliseconds
+  const now = new Date();
+  const delay = targetTime.getTime() - now.getTime();
+  
+  if (delay > 0) {
+    // Schedule the notification
+    setTimeout(() => {
+      new Notification("Reminder", {
+        body: description,
+        icon: "/favicon.ico"
+      });
+      
+      // Also play a sound
+      const audio = new Audio("/notification-sound.mp3");
+      audio.play().catch(e => console.error("Error playing notification sound:", e));
+    }, delay);
+    
+    console.log(`Notification scheduled for ${targetTime.toLocaleString()}, in ${delay}ms`);
+  } else {
+    // If time is in the past, show notification immediately
+    new Notification("Reminder", {
+      body: description,
+      icon: "/favicon.ico"
+    });
+  }
+}
+
+/**
+ * Schedule an alarm using Chromium's alarm API (for extensions/PWAs)
+ */
+function scheduleChromiumAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
+  // Only available in Chromium extensions
+  if (typeof chrome !== 'undefined' && chrome.alarms) {
+    const targetTime = calculateTargetTime(timeMatch, dateMatch);
+    
+    // Create an alarm with Chromium's API
+    chrome.alarms.create(description, {
+      when: targetTime.getTime()
+    });
+    
+    console.log(`Chrome alarm scheduled for ${targetTime.toLocaleString()}`);
+    
+    // Set up the alarm listener if not already set
+    if (!window.alarmListenerSet) {
+      chrome.alarms.onAlarm.addListener((alarm) => {
+        new Notification("Reminder", {
+          body: alarm.name,
+          icon: "/favicon.ico"
+        });
+      });
+      
+      window.alarmListenerSet = true;
+    }
+  }
+}
+
+/**
+ * Calculate the target time for an alarm or reminder
+ */
+function calculateTargetTime(timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): Date {
+  const now = new Date();
+  const result = new Date(now);
+  
+  // Set time if specified
+  if (timeMatch) {
+    const hour = parseInt(timeMatch[1]);
+    const minute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+    const period = timeMatch[3]?.toLowerCase();
+    
+    // Convert hour to 24-hour format if needed
+    let hour24 = hour;
+    if (period === 'pm' && hour < 12) {
+      hour24 = hour + 12;
+    } else if (period === 'am' && hour === 12) {
+      hour24 = 0;
+    }
+    
+    result.setHours(hour24, minute, 0, 0);
+  }
+  
+  // Set date if specified
+  if (dateMatch) {
+    const dateStr = dateMatch[1].toLowerCase();
+    
+    if (dateStr === 'tomorrow') {
+      result.setDate(result.getDate() + 1);
+    } else if (dateStr !== 'today') {
+      // Handle days of week
+      const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayIndex = daysOfWeek.indexOf(dateStr);
+      
+      if (dayIndex !== -1) {
+        const currentDay = result.getDay();
+        let daysToAdd = dayIndex - currentDay;
+        
+        // If the day has already passed this week, schedule for next week
+        if (daysToAdd <= 0) {
+          daysToAdd += 7;
+        }
+        
+        result.setDate(result.getDate() + daysToAdd);
+      }
+    }
+  }
+  
+  // If resulting time is in the past, schedule for the next day
+  if (result.getTime() <= now.getTime()) {
+    result.setDate(result.getDate() + 1);
+  }
+  
+  return result;
 }
 
 /**

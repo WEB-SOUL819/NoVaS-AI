@@ -181,7 +181,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           text: `I am an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
         };
       }
-      // Check for web search queries
+      // Check for web search queries - prioritize this for news related queries
       else if (isWebSearchQuery(messageText)) {
         try {
           const searchQuery = extractSearchQuery(messageText);
@@ -238,13 +238,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (voiceEnabled) {
         setSystemStatus(prev => ({ ...prev, isSpeaking: true }));
         console.log("Attempting text-to-speech with:", response.text);
-        const audioBlob = await textToSpeech(response.text);
-        console.log("TTS returned audioBlob:", !!audioBlob);
         
-        if (audioBlob) {
-          await playAudio(audioBlob);
+        // Don't speak error messages
+        if (!assistantMessage.content.toLowerCase().includes("error") && 
+            !assistantMessage.content.toLowerCase().includes("sorry, i couldn't") &&
+            !assistantMessage.content.toLowerCase().includes("i'm sorry") &&
+            !assistantMessage.content.toLowerCase().includes("failed")) {
+          const audioBlob = await textToSpeech(response.text);
+          console.log("TTS returned audioBlob:", !!audioBlob);
+          
+          if (audioBlob) {
+            await playAudio(audioBlob);
+          } else {
+            console.error("No audio blob returned from textToSpeech");
+          }
         } else {
-          console.error("No audio blob returned from textToSpeech");
+          console.log("Skipping TTS for error message");
         }
         
         setSystemStatus(prev => ({ ...prev, isSpeaking: false }));
