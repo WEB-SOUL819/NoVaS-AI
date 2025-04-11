@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { AutomationTask, AutomationWorkflow } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { analyzeForAutomation, generateAutomationWorkflow, saveTaskToSupabase, saveWorkflowToSupabase } from "@/utils/automationUtils";
+import { analyzeForAutomation, generateAutomationWorkflow } from "@/utils/automationUtils";
 import { toast } from "sonner";
 
 export const useAutomation = () => {
@@ -26,7 +26,7 @@ export const useAutomation = () => {
     try {
       setIsLoading(true);
       
-      // Try to fetch from Supabase first
+      // Try to fetch from Supabase 
       const { data, error } = await supabase
         .from('automation_tasks')
         .select('*')
@@ -50,7 +50,7 @@ export const useAutomation = () => {
         }
       } else if (data) {
         // Format Supabase data
-        const formattedTasks = data.map(item => ({
+        const formattedTasks = data.map((item: any) => ({
           id: item.id,
           name: item.name,
           type: item.type as "reminder" | "schedule" | "trigger" | "workflow",
@@ -60,7 +60,7 @@ export const useAutomation = () => {
           completedAt: item.completed_at ? new Date(item.completed_at) : undefined,
           schedule: item.schedule,
           triggerCondition: item.trigger_condition,
-          actions: item.actions ? JSON.parse(item.actions) : undefined
+          actions: item.actions ? JSON.parse(JSON.stringify(item.actions)) : undefined
         }));
         setTasks(formattedTasks);
       }
@@ -78,7 +78,7 @@ export const useAutomation = () => {
     try {
       setIsLoading(true);
       
-      // Try to fetch from Supabase first
+      // Try to fetch from Supabase
       const { data, error } = await supabase
         .from('automation_workflows')
         .select('*')
@@ -102,12 +102,12 @@ export const useAutomation = () => {
         }
       } else if (data) {
         // Format Supabase data
-        const formattedWorkflows = data.map(item => ({
+        const formattedWorkflows = data.map((item: any) => ({
           id: item.id,
           name: item.name,
           description: item.description,
-          triggers: JSON.parse(item.triggers),
-          actions: JSON.parse(item.actions),
+          triggers: JSON.parse(JSON.stringify(item.triggers)),
+          actions: JSON.parse(JSON.stringify(item.actions)),
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at),
           isActive: item.is_active
@@ -126,16 +126,39 @@ export const useAutomation = () => {
     if (!user) return null;
     
     try {
-      // Add to local state
-      const updatedTasks = [...tasks, task];
-      setTasks(updatedTasks);
+      // Format task for Supabase
+      const taskData = {
+        user_id: user.id,
+        name: task.name,
+        type: task.type,
+        details: task.details,
+        status: task.status,
+        schedule: task.schedule,
+        trigger_condition: task.triggerCondition,
+        actions: task.actions ? task.actions : null
+      };
       
-      // Try to save to Supabase
-      const saved = await saveTaskToSupabase(user.id, task);
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('automation_tasks')
+        .insert(taskData)
+        .select('id')
+        .single();
       
-      if (!saved) {
+      if (error) {
+        console.warn("Could not save to Supabase, using localStorage fallback:", error);
+        
+        // Add to local state
+        const updatedTasks = [...tasks, task];
+        setTasks(updatedTasks);
+        
         // Fallback to localStorage
         localStorage.setItem(`automation_tasks_${user.id}`, JSON.stringify(updatedTasks));
+      } else {
+        // Add to local state with the DB-generated ID
+        const newTask = { ...task, id: data.id };
+        const updatedTasks = [...tasks, newTask];
+        setTasks(updatedTasks);
       }
       
       toast.success("Automation task created");
@@ -151,16 +174,37 @@ export const useAutomation = () => {
     if (!user) return null;
     
     try {
-      // Add to local state
-      const updatedWorkflows = [...workflows, workflow];
-      setWorkflows(updatedWorkflows);
+      // Format workflow for Supabase
+      const workflowData = {
+        user_id: user.id,
+        name: workflow.name,
+        description: workflow.description,
+        triggers: workflow.triggers,
+        actions: workflow.actions,
+        is_active: workflow.isActive
+      };
       
-      // Try to save to Supabase
-      const saved = await saveWorkflowToSupabase(user.id, workflow);
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('automation_workflows')
+        .insert(workflowData)
+        .select('id')
+        .single();
       
-      if (!saved) {
+      if (error) {
+        console.warn("Could not save to Supabase, using localStorage fallback:", error);
+        
+        // Add to local state
+        const updatedWorkflows = [...workflows, workflow];
+        setWorkflows(updatedWorkflows);
+        
         // Fallback to localStorage
         localStorage.setItem(`automation_workflows_${user.id}`, JSON.stringify(updatedWorkflows));
+      } else {
+        // Add to local state with the DB-generated ID
+        const newWorkflow = { ...workflow, id: data.id };
+        const updatedWorkflows = [...workflows, newWorkflow];
+        setWorkflows(updatedWorkflows);
       }
       
       toast.success("Automation workflow created");

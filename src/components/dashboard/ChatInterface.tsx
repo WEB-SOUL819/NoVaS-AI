@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import MessageBubble from "@/components/MessageBubble";
 import VoiceVisualizer from "@/components/VoiceVisualizer";
 import { Message } from "@/types";
 import { toast } from "sonner";
-import { processWithAI, isWebSearchQuery } from "@/utils/ai";
+import { processWithAI, isWebSearchQuery, AUTOMATION_KNOWLEDGE_BASES } from "@/utils/ai";
 import { searchWeb, extractSearchQuery } from "@/utils/webSearch";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
@@ -80,12 +81,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, [micEnabled, setSystemStatus]);
 
-  const saveMessageToSupabase = async (message: Message) => {
-    if (!user) return;
+  const saveMessageToSupabase = async (message: Message, conversationId?: string) => {
+    if (!user) return null;
     
     try {
+      let activeConversationId = conversationId;
+      
       // Create a conversation if this is the first message
-      if (messages.length === 0 || messages.length === 1) {
+      if (!activeConversationId) {
         const { data: conversation, error: convError } = await supabase
           .from('conversations')
           .insert([
@@ -95,52 +98,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           .single();
           
         if (convError) throw convError;
-        
-        const conversationId = conversation.id;
-        
-        // Insert the message
-        const { error: msgError } = await supabase
-          .from('messages')
-          .insert([
-            { 
-              conversation_id: conversationId,
-              role: message.role,
-              content: message.content,
-              timestamp: message.timestamp
-            }
-          ]);
-          
-        if (msgError) throw msgError;
-      } else {
-        // Get the most recent conversation
-        const { data: conversations, error: convError } = await supabase
-          .from('conversations')
-          .select('id')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-          
-        if (convError && convError.code !== 'PGRST116') throw convError;
-        
-        if (conversations) {
-          const { error: msgError } = await supabase
-            .from('messages')
-            .insert([
-              { 
-                conversation_id: conversations.id,
-                role: message.role,
-                content: message.content,
-                timestamp: message.timestamp
-              }
-            ]);
-            
-          if (msgError) throw msgError;
-        }
+        activeConversationId = conversation.id;
       }
+      
+      // Insert the message
+      const { data, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: activeConversationId,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp.toISOString()
+        });
+          
+      if (msgError) throw msgError;
+      
+      return activeConversationId;
     } catch (error) {
       console.error("Error saving message to Supabase:", error);
-      // Don't show toast error to avoid interrupting the chat experience
+      return null;
     }
   };
 
@@ -166,7 +142,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setMessages(prev => [...prev, userMessage, assistantPlaceholder]);
     setInputMessage("");
     
-    saveMessageToSupabase(userMessage);
+    let conversationId = await saveMessageToSupabase(userMessage);
     
     setSystemStatus(prev => ({ ...prev, isThinking: true }));
     
@@ -252,7 +228,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )
       );
       
-      saveMessageToSupabase(assistantMessage);
+      // Save assistant message to Supabase
+      if (conversationId) {
+        await saveMessageToSupabase(assistantMessage, conversationId);
+      }
       
       setSystemStatus(prev => ({ ...prev, isThinking: false }));
       

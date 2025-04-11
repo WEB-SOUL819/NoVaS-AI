@@ -12,7 +12,14 @@ const MAX_RESULTS = 5;
  */
 export async function searchWeb(query: string): Promise<string> {
   try {
-    // First try using a direct search API (Google Programmable Search JSON API)
+    console.log("Searching the web for:", query);
+    
+    // Check if this is a current events query
+    if (isCurrentEventsQuery(query)) {
+      return await searchCurrentEvents();
+    }
+    
+    // First try using a direct search API
     const searchResults = await fetchSearchResults(query);
     
     if (searchResults.length > 0) {
@@ -29,6 +36,71 @@ export async function searchWeb(query: string): Promise<string> {
 }
 
 /**
+ * Check if query is about current events
+ */
+function isCurrentEventsQuery(query: string): boolean {
+  const currentEventsKeywords = [
+    'happening now', 
+    'happening today', 
+    'happening in the world', 
+    'latest news', 
+    'current events', 
+    'today\'s news', 
+    'breaking news',
+    'recent events',
+    'latest headlines'
+  ];
+  
+  const lowerQuery = query.toLowerCase();
+  return currentEventsKeywords.some(keyword => lowerQuery.includes(keyword));
+}
+
+/**
+ * Search for current events
+ */
+async function searchCurrentEvents(): Promise<string> {
+  try {
+    // For demo purposes, we'll return a simulated news summary
+    // In production, this would connect to a news API
+    const today = new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    return `
+# Latest News Headlines (${today})
+
+## Global News
+- World leaders gather for climate summit to discuss new emissions targets
+- Major tech companies announce AI ethics coalition to promote responsible development
+- Global economy shows signs of recovery with positive growth forecasts
+
+## Technology
+- New smartphone models unveiled with advanced AI capabilities and improved battery life
+- Major security vulnerability discovered in popular software, patches being deployed
+- Breakthrough in quantum computing achieves new processing milestone
+
+## Science
+- Scientists report promising results from clinical trials of new treatment for Alzheimer's
+- Space telescope discovers potentially habitable exoplanet 40 light years from Earth
+- Research team develops new sustainable material that could replace plastics
+
+## Business
+- Stock markets hit record highs amid positive economic indicators
+- Major merger announced between leading companies in the transportation sector
+- Several tech startups achieve unicorn status in latest funding rounds
+
+Information is based on simulated current events and may not reflect actual real-time news.
+`;
+  } catch (error) {
+    console.error("Error fetching current events:", error);
+    return "I'm sorry, I couldn't retrieve the latest news due to a technical issue. Please try again later.";
+  }
+}
+
+/**
  * Fetch search results using a search API
  */
 async function fetchSearchResults(query: string): Promise<any[]> {
@@ -37,7 +109,6 @@ async function fetchSearchResults(query: string): Promise<any[]> {
     // would require API keys that we don't want to expose
     
     // Simulate a network request
-    console.log("Searching the web for:", query);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Return an empty array for now - in a real implementation this would

@@ -3,6 +3,7 @@ import { SYSTEM_PROMPTS } from "@/config/env";
 import { Message, AutomationTask, AutomationWorkflow } from "@/types";
 import { processWithAI } from "./aiService";
 import { supabase } from "@/integrations/supabase/client";
+import { AUTOMATION_KNOWLEDGE_BASES } from "./ai";
 
 /**
  * Analyze text and extract potential automation tasks
@@ -16,7 +17,7 @@ export async function analyzeForAutomation(text: string): Promise<AutomationTask
     }
     
     // If no local patterns match, try AI-based analysis
-    const systemPrompt = SYSTEM_PROMPTS.AUTOMATION;
+    const systemPrompt = SYSTEM_PROMPTS.AUTOMATION + generateKnowledgeBasePrompt();
     const messages: Message[] = [
       {
         id: "automation-analysis",
@@ -50,6 +51,21 @@ export async function analyzeForAutomation(text: string): Promise<AutomationTask
     console.error("Error analyzing for automation:", error);
     return [];
   }
+}
+
+/**
+ * Generate a prompt with knowledge base information
+ */
+function generateKnowledgeBasePrompt(): string {
+  let knowledgePrompt = "\n\nYou have access to the following knowledge bases for automation:\n";
+  
+  AUTOMATION_KNOWLEDGE_BASES.forEach(kb => {
+    knowledgePrompt += `- ${kb.name}: ${kb.description}\n`;
+  });
+  
+  knowledgePrompt += "\nLeverage these knowledge bases to provide accurate and helpful automation suggestions.";
+  
+  return knowledgePrompt;
 }
 
 /**
@@ -156,8 +172,10 @@ export async function generateAutomationWorkflow(request: string): Promise<strin
       return localWorkflow;
     }
     
+    // Add knowledge base information to prompt
+    const systemPrompt = SYSTEM_PROMPTS.AUTOMATION_WORKFLOW + generateKnowledgeBasePrompt();
+    
     // If not, use AI
-    const systemPrompt = SYSTEM_PROMPTS.AUTOMATION_WORKFLOW;
     const messages: Message[] = [
       {
         id: "automation-workflow",
@@ -223,112 +241,4 @@ function generateWorkflowLocally(request: string): string | null {
   
   // No match for common patterns
   return null;
-}
-
-/**
- * Save automation task to Supabase
- */
-export async function saveTaskToSupabase(userId: string, task: AutomationTask): Promise<boolean> {
-  try {
-    // Check if user is authenticated
-    if (!userId) {
-      console.error("Cannot save task: No user ID provided");
-      return false;
-    }
-    
-    // Format task for storage
-    const taskData = {
-      user_id: userId,
-      name: task.name,
-      type: task.type,
-      details: task.details,
-      status: task.status,
-      created_at: task.createdAt.toISOString(),
-      completed_at: task.completedAt ? task.completedAt.toISOString() : null,
-      schedule: task.schedule || null,
-      trigger_condition: task.triggerCondition || null,
-      actions: task.actions ? JSON.stringify(task.actions) : null
-    };
-    
-    // Insert into Supabase automation_tasks table (if it exists)
-    const { error } = await supabase
-      .from('automation_tasks')
-      .insert([taskData])
-      .select();
-    
-    if (error) {
-      // If table doesn't exist yet, store in localStorage as fallback
-      console.warn("Could not save to Supabase, using localStorage fallback:", error);
-      
-      // Get existing tasks from localStorage
-      const storedTasks = localStorage.getItem(`automation_tasks_${userId}`);
-      let tasks = storedTasks ? JSON.parse(storedTasks) : [];
-      
-      // Add new task
-      tasks.push(task);
-      
-      // Save back to localStorage
-      localStorage.setItem(`automation_tasks_${userId}`, JSON.stringify(tasks));
-      
-      return true;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error saving task to Supabase:", error);
-    return false;
-  }
-}
-
-/**
- * Save automation workflow to Supabase
- */
-export async function saveWorkflowToSupabase(userId: string, workflow: AutomationWorkflow): Promise<boolean> {
-  try {
-    // Check if user is authenticated
-    if (!userId) {
-      console.error("Cannot save workflow: No user ID provided");
-      return false;
-    }
-    
-    // Format workflow for storage
-    const workflowData = {
-      user_id: userId,
-      name: workflow.name,
-      description: workflow.description,
-      triggers: JSON.stringify(workflow.triggers),
-      actions: JSON.stringify(workflow.actions),
-      created_at: workflow.createdAt.toISOString(),
-      updated_at: workflow.updatedAt.toISOString(),
-      is_active: workflow.isActive
-    };
-    
-    // Insert into Supabase automation_workflows table (if it exists)
-    const { error } = await supabase
-      .from('automation_workflows')
-      .insert([workflowData])
-      .select();
-    
-    if (error) {
-      // If table doesn't exist yet, store in localStorage as fallback
-      console.warn("Could not save to Supabase, using localStorage fallback:", error);
-      
-      // Get existing workflows from localStorage
-      const storedWorkflows = localStorage.getItem(`automation_workflows_${userId}`);
-      let workflows = storedWorkflows ? JSON.parse(storedWorkflows) : [];
-      
-      // Add new workflow
-      workflows.push(workflow);
-      
-      // Save back to localStorage
-      localStorage.setItem(`automation_workflows_${userId}`, JSON.stringify(workflows));
-      
-      return true;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error saving workflow to Supabase:", error);
-    return false;
-  }
 }

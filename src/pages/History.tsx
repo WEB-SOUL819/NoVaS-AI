@@ -7,9 +7,15 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Trash2, MessageSquare, Calendar } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const History = () => {
-  const { conversations, isLoading, fetchMessages, setActiveConversation, deleteConversation } = useConversations();
+  const { conversations, isLoading, fetchConversations, fetchMessages, setActiveConversation, deleteConversation } = useConversations();
+  
+  // Fetch conversations when the component mounts
+  useEffect(() => {
+    fetchConversations();
+  }, []);
   
   if (isLoading) {
     return (
@@ -18,6 +24,18 @@ const History = () => {
       </div>
     );
   }
+  
+  const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      await deleteConversation(id);
+      toast.success("Conversation deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete conversation");
+    }
+  };
   
   return (
     <div className="min-h-screen bg-background p-4">
@@ -65,7 +83,7 @@ const History = () => {
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        onClick={() => deleteConversation(conversation.id)}
+                        onClick={(e) => handleDeleteConversation(conversation.id, e)}
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />

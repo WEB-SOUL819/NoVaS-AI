@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      automation_tasks: {
+        Row: {
+          actions: Json | null
+          completed_at: string | null
+          created_at: string
+          details: string | null
+          id: string
+          name: string
+          schedule: string | null
+          status: string
+          trigger_condition: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          name: string
+          schedule?: string | null
+          status: string
+          trigger_condition?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          name?: string
+          schedule?: string | null
+          status?: string
+          trigger_condition?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      automation_workflows: {
+        Row: {
+          actions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          triggers: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          triggers: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          triggers?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string

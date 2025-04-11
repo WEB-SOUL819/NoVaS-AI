@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Conversation, Message, MessageRole } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -312,6 +313,7 @@ export const useConversations = () => {
     activeConversation,
     isLoading,
     isLoadingMessages,
+    fetchConversations,
     fetchMessages,
     setActiveConversation,
     createConversation,
