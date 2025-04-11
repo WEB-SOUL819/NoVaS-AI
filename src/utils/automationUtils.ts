@@ -1,9 +1,28 @@
+
 import { SYSTEM_PROMPTS } from "@/config/env";
 import { Message, AutomationTask, AutomationWorkflow } from "@/types";
 import { processWithAI } from "./aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { AUTOMATION_KNOWLEDGE_BASES } from "./ai";
 import { toast } from "sonner";
+
+// Define a type for the Chrome API to make TypeScript happy
+interface ChromeAlarmAPI {
+  alarms?: {
+    create: (name: string, options: { when: number }) => void;
+    onAlarm: {
+      addListener: (callback: (alarm: { name: string }) => void) => void;
+    };
+  };
+}
+
+// Define window interface extension for our custom property
+declare global {
+  interface Window {
+    alarmListenerSet?: boolean;
+    chrome?: ChromeAlarmAPI;
+  }
+}
 
 /**
  * Analyze text and extract potential automation tasks
@@ -187,7 +206,7 @@ function setDeviceAlarm(description: string, timeMatch: RegExpMatchArray | null,
     }
     
     // Also try to use the alarm API if available (Chrome extensions, PWAs)
-    if ('alarm' in chrome) {
+    if (window.chrome && window.chrome.alarms) {
       scheduleChromiumAlarm(description, timeMatch, dateMatch);
     }
     
@@ -237,11 +256,11 @@ function scheduleNotification(description: string, timeMatch: RegExpMatchArray |
  */
 function scheduleChromiumAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
   // Only available in Chromium extensions
-  if (typeof chrome !== 'undefined' && chrome.alarms) {
+  if (typeof window !== 'undefined' && window.chrome && window.chrome.alarms) {
     const targetTime = calculateTargetTime(timeMatch, dateMatch);
     
     // Create an alarm with Chromium's API
-    chrome.alarms.create(description, {
+    window.chrome.alarms.create(description, {
       when: targetTime.getTime()
     });
     
@@ -249,7 +268,7 @@ function scheduleChromiumAlarm(description: string, timeMatch: RegExpMatchArray 
     
     // Set up the alarm listener if not already set
     if (!window.alarmListenerSet) {
-      chrome.alarms.onAlarm.addListener((alarm) => {
+      window.chrome.alarms.onAlarm.addListener((alarm) => {
         new Notification("Reminder", {
           body: alarm.name,
           icon: "/favicon.ico"
