@@ -1,4 +1,3 @@
-
 import { SYSTEM_PROMPTS } from "@/config/env";
 import { Message, AutomationTask, AutomationWorkflow } from "@/types";
 import { processWithAI } from "./aiService";
@@ -6,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AUTOMATION_KNOWLEDGE_BASES } from "./ai";
 import { toast } from "sonner";
 
-// Define a type for the Chrome API to make TypeScript happy
 interface ChromeAlarmAPI {
   alarms?: {
     create: (name: string, options: { when: number }) => void;
@@ -16,11 +14,12 @@ interface ChromeAlarmAPI {
   };
 }
 
-// Define window interface extension for our custom property
 declare global {
   interface Window {
     alarmListenerSet?: boolean;
     chrome?: ChromeAlarmAPI;
+    checkAlarmsInterval?: number;
+    checkLocalStorageInterval?: number;
   }
 }
 
@@ -187,30 +186,41 @@ function analyzeTextLocally(text: string): AutomationTask[] {
 }
 
 /**
- * Actually set an alarm or reminder on the device if possible
+ * Actually set an alarm or reminder on the device using multiple methods
  */
 function setDeviceAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
   try {
-    // Check if notification API is available
-    if ('Notification' in window) {
-      // Request permission if not already granted
-      if (Notification.permission !== 'granted') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            scheduleNotification(description, timeMatch, dateMatch);
-          }
-        });
-      } else {
-        scheduleNotification(description, timeMatch, dateMatch);
+    const reminderMethods = [
+      setWebNotification,
+      setIndexedDBAlarm,
+      setLocalStorageAlarm,
+      setChromiumAlarm,
+      setServiceWorkerAlarm
+    ];
+    
+    // Try all available methods and record successful ones
+    let successfulMethods = 0;
+    
+    // Request notification permission if needed
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+    
+    // Attempt each method
+    for (const method of reminderMethods) {
+      try {
+        const success = method(description, timeMatch, dateMatch);
+        if (success) successfulMethods++;
+      } catch (err) {
+        console.warn(`Method ${method.name} failed:`, err);
       }
     }
     
-    // Also try to use the alarm API if available (Chrome extensions, PWAs)
-    if (window.chrome && window.chrome.alarms) {
-      scheduleChromiumAlarm(description, timeMatch, dateMatch);
+    if (successfulMethods > 0) {
+      toast.success(`Alarm has been set on your device (${successfulMethods} methods used)`);
+    } else {
+      toast.error("Could not set alarm on your device. Permission may be required.");
     }
-    
-    toast.success("Alarm has been set on your device");
   } catch (error) {
     console.error("Error setting device alarm:", error);
     toast.error("Could not set alarm on your device. Permission may be required.");
@@ -218,43 +228,205 @@ function setDeviceAlarm(description: string, timeMatch: RegExpMatchArray | null,
 }
 
 /**
- * Schedule a notification at the specified time
+ * Set alarm using Web Notifications
  */
-function scheduleNotification(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
-  // Calculate when to show the notification
-  const targetTime = calculateTargetTime(timeMatch, dateMatch);
-  
-  // Calculate delay in milliseconds
-  const now = new Date();
-  const delay = targetTime.getTime() - now.getTime();
-  
-  if (delay > 0) {
-    // Schedule the notification
-    setTimeout(() => {
-      new Notification("Reminder", {
-        body: description,
-        icon: "/favicon.ico"
-      });
-      
-      // Also play a sound
-      const audio = new Audio("/notification-sound.mp3");
-      audio.play().catch(e => console.error("Error playing notification sound:", e));
-    }, delay);
+function setWebNotification(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): boolean {
+  if ('Notification' in window) {
+    const targetTime = calculateTargetTime(timeMatch, dateMatch);
+    const now = new Date();
+    const delay = targetTime.getTime() - now.getTime();
     
-    console.log(`Notification scheduled for ${targetTime.toLocaleString()}, in ${delay}ms`);
-  } else {
-    // If time is in the past, show notification immediately
-    new Notification("Reminder", {
-      body: description,
-      icon: "/favicon.ico"
-    });
+    if (delay > 0) {
+      setTimeout(() => {
+        if (Notification.permission === 'granted') {
+          new Notification("Reminder", {
+            body: description,
+            icon: "/favicon.ico"
+          });
+          
+          // Also play a sound
+          const audio = new Audio("/notification-sound.mp3");
+          audio.play().catch(e => console.error("Error playing notification sound:", e));
+        }
+      }, delay);
+      
+      console.log(`Web Notification scheduled for ${targetTime.toLocaleString()}, in ${delay}ms`);
+      return true;
+    } else {
+      // If time is in the past, show notification immediately
+      if (Notification.permission === 'granted') {
+        new Notification("Reminder", {
+          body: description,
+          icon: "/favicon.ico"
+        });
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Set alarm using IndexedDB
+ */
+function setIndexedDBAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): boolean {
+  try {
+    const targetTime = calculateTargetTime(timeMatch, dateMatch);
+    
+    // Open a connection to IndexedDB
+    const request = indexedDB.open("AlarmDatabase", 1);
+    
+    request.onupgradeneeded = function(event) {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("alarms")) {
+        db.createObjectStore("alarms", { keyPath: "id", autoIncrement: true });
+      }
+    };
+    
+    request.onsuccess = function(event) {
+      const db = request.result;
+      const transaction = db.transaction(["alarms"], "readwrite");
+      const alarmStore = transaction.objectStore("alarms");
+      
+      const alarm = {
+        description: description,
+        time: targetTime.getTime(),
+        created: new Date().getTime()
+      };
+      
+      alarmStore.add(alarm);
+      
+      // Set an interval to check for alarms
+      if (!window.checkAlarmsInterval) {
+        window.checkAlarmsInterval = setInterval(checkIndexedDBAlarms, 10000); // Check every 10 seconds
+      }
+      
+      console.log(`IndexedDB alarm set for ${targetTime.toLocaleString()}`);
+    };
+    
+    return true;
+  } catch (error) {
+    console.error("Error setting IndexedDB alarm:", error);
+    return false;
   }
 }
 
 /**
- * Schedule an alarm using Chromium's alarm API (for extensions/PWAs)
+ * Check for alarms stored in IndexedDB
  */
-function scheduleChromiumAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): void {
+function checkIndexedDBAlarms() {
+  const request = indexedDB.open("AlarmDatabase", 1);
+  
+  request.onsuccess = function(event) {
+    const db = request.result;
+    const transaction = db.transaction(["alarms"], "readwrite");
+    const alarmStore = transaction.objectStore("alarms");
+    const now = new Date().getTime();
+    
+    const getAllRequest = alarmStore.getAll();
+    
+    getAllRequest.onsuccess = function() {
+      const alarms = getAllRequest.result;
+      alarms.forEach(alarm => {
+        if (alarm.time <= now) {
+          // Trigger notification
+          if (Notification.permission === 'granted') {
+            new Notification("Reminder", {
+              body: alarm.description,
+              icon: "/favicon.ico"
+            });
+            
+            // Play sound
+            const audio = new Audio("/notification-sound.mp3");
+            audio.play().catch(e => console.error("Error playing notification sound:", e));
+          }
+          
+          // Remove the alarm
+          alarmStore.delete(alarm.id);
+        }
+      });
+    };
+  };
+}
+
+/**
+ * Set alarm using localStorage
+ */
+function setLocalStorageAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): boolean {
+  try {
+    const targetTime = calculateTargetTime(timeMatch, dateMatch);
+    
+    // Get existing alarms from localStorage
+    const existingAlarmsJSON = localStorage.getItem('novas_alarms') || '[]';
+    const alarms = JSON.parse(existingAlarmsJSON);
+    
+    // Add new alarm
+    alarms.push({
+      id: Math.random().toString(36).substring(2, 9),
+      description: description,
+      time: targetTime.getTime(),
+      created: new Date().getTime()
+    });
+    
+    // Save back to localStorage
+    localStorage.setItem('novas_alarms', JSON.stringify(alarms));
+    
+    // Set an interval to check for alarms if not already set
+    if (!window.checkLocalStorageInterval) {
+      window.checkLocalStorageInterval = setInterval(checkLocalStorageAlarms, 10000); // Check every 10 seconds
+    }
+    
+    console.log(`LocalStorage alarm set for ${targetTime.toLocaleString()}`);
+    return true;
+  } catch (error) {
+    console.error("Error setting localStorage alarm:", error);
+    return false;
+  }
+}
+
+/**
+ * Check for alarms stored in localStorage
+ */
+function checkLocalStorageAlarms() {
+  try {
+    const existingAlarmsJSON = localStorage.getItem('novas_alarms') || '[]';
+    const alarms = JSON.parse(existingAlarmsJSON);
+    const now = new Date().getTime();
+    let updated = false;
+    
+    // Filter out and trigger expired alarms
+    const remainingAlarms = alarms.filter(alarm => {
+      if (alarm.time <= now) {
+        // Trigger notification
+        if (Notification.permission === 'granted') {
+          new Notification("Reminder", {
+            body: alarm.description,
+            icon: "/favicon.ico"
+          });
+          
+          // Play sound
+          const audio = new Audio("/notification-sound.mp3");
+          audio.play().catch(e => console.error("Error playing notification sound:", e));
+        }
+        updated = true;
+        return false; // Remove this alarm
+      }
+      return true; // Keep this alarm
+    });
+    
+    // Update localStorage if alarms were triggered
+    if (updated) {
+      localStorage.setItem('novas_alarms', JSON.stringify(remainingAlarms));
+    }
+  } catch (error) {
+    console.error("Error checking localStorage alarms:", error);
+  }
+}
+
+/**
+ * Set alarm using Chromium's alarm API (for extensions/PWAs)
+ */
+function setChromiumAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): boolean {
   // Only available in Chromium extensions
   if (typeof window !== 'undefined' && window.chrome && window.chrome.alarms) {
     const targetTime = calculateTargetTime(timeMatch, dateMatch);
@@ -269,15 +441,60 @@ function scheduleChromiumAlarm(description: string, timeMatch: RegExpMatchArray 
     // Set up the alarm listener if not already set
     if (!window.alarmListenerSet) {
       window.chrome.alarms.onAlarm.addListener((alarm) => {
-        new Notification("Reminder", {
-          body: alarm.name,
-          icon: "/favicon.ico"
-        });
+        if (Notification.permission === 'granted') {
+          new Notification("Reminder", {
+            body: alarm.name,
+            icon: "/favicon.ico"
+          });
+          
+          // Play sound
+          const audio = new Audio("/notification-sound.mp3");
+          audio.play().catch(e => console.error("Error playing notification sound:", e));
+        }
       });
       
       window.alarmListenerSet = true;
     }
+    
+    return true;
   }
+  return false;
+}
+
+/**
+ * Set alarm using Service Workers
+ */
+function setServiceWorkerAlarm(description: string, timeMatch: RegExpMatchArray | null, dateMatch: RegExpMatchArray | null): boolean {
+  if ('serviceWorker' in navigator) {
+    try {
+      const targetTime = calculateTargetTime(timeMatch, dateMatch);
+      const now = new Date();
+      const delay = targetTime.getTime() - now.getTime();
+      
+      if (delay > 0) {
+        // Register or find the service worker
+        navigator.serviceWorker.ready.then(registration => {
+          // Use the standard setTimeout approach first
+          setTimeout(() => {
+            if (Notification.permission === 'granted') {
+              registration.showNotification("Reminder", {
+                body: description,
+                icon: "/favicon.ico",
+                vibrate: [200, 100, 200]
+              });
+            }
+          }, delay);
+          
+          console.log(`Service Worker notification scheduled for ${targetTime.toLocaleString()}`);
+        });
+        
+        return true;
+      }
+    } catch (error) {
+      console.error("Error setting service worker alarm:", error);
+    }
+  }
+  return false;
 }
 
 /**

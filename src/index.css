@@ -45,6 +45,12 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 240 12% 15%;
     --sidebar-ring: 226 100% 65%;
+
+    --nova-300: 230 80% 70%;
+    --nova-400: 226 90% 65%;
+    --nova-500: 226 100% 65%;
+    --nova-600: 230 90% 60%;
+    --nova-700: 235 85% 55%;
   }
 
   .theme-light {
@@ -84,6 +90,12 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 240 5.9% 90%;
     --sidebar-ring: 226 70% 55%;
+
+    --nova-300: 230 70% 70%;
+    --nova-400: 226 70% 65%;
+    --nova-500: 226 70% 60%;
+    --nova-600: 230 70% 55%;
+    --nova-700: 235 70% 50%;
   }
 
   .theme-stealth {
@@ -123,6 +135,12 @@
     --sidebar-accent-foreground: 0 0% 80%;
     --sidebar-border: 230 15% 12%;
     --sidebar-ring: 220 50% 40%;
+
+    --nova-300: 220 40% 45%;
+    --nova-400: 220 45% 40%;
+    --nova-500: 220 50% 35%;
+    --nova-600: 220 45% 30%;
+    --nova-700: 220 40% 25%;
   }
 
   html {
@@ -156,17 +174,18 @@
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(15, 15, 25, 0.5);
+    background: rgba(15, 15, 25, 0.3);
+    border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb {
     background: rgba(67, 97, 238, 0.5);
-    border-radius: 4px;
+    border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -175,7 +194,12 @@
 
   /* Glowing element */
   .glow-border {
-    box-shadow: 0 0 5px 2px rgba(67, 97, 238, 0.4);
+    box-shadow: 0 0 8px 2px rgba(67, 97, 238, 0.4);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-border:hover {
+    box-shadow: 0 0 12px 4px rgba(67, 97, 238, 0.6);
   }
 
   .glow-text {
@@ -187,6 +211,12 @@
     background: rgba(30, 30, 45, 0.7);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(67, 97, 238, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .glass-panel:hover {
+    border-color: rgba(67, 97, 238, 0.3);
+    box-shadow: 0 0 20px 0 rgba(67, 97, 238, 0.1);
   }
 
   .theme-light .glass-panel {
@@ -242,6 +272,14 @@
     50% { box-shadow: 0 0 15px 5px rgba(67, 97, 238, 0.6); }
     100% { box-shadow: 0 0 5px 0 rgba(67, 97, 238, 0.4); }
   }
+  
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
 }
 
 @layer components {
@@ -251,17 +289,30 @@
   
   .nova-gradient {
     background: linear-gradient(135deg, #4361EE 0%, #7209B7 100%);
+    transition: all 0.3s ease;
+  }
+  
+  .nova-gradient:hover {
+    background: linear-gradient(135deg, #3b55d1 0%, #6307a0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+  }
+  
+  .nova-gradient:active {
+    transform: translateY(1px);
   }
   
   .nova-border {
     border: 1px solid;
     border-image-slice: 1;
     border-image-source: linear-gradient(135deg, #4361EE 0%, #7209B7 100%);
+    transition: all 0.3s ease;
   }
   
   .visualizer-bar {
-    @apply w-1 rounded-full mx-0.5 bg-nova-600;
+    @apply rounded-full mx-0.5;
     transform-origin: bottom;
+    transition: height 0.2s ease;
   }
   
   /* Enhanced card design */
@@ -293,17 +344,50 @@
   
   .status-active::before {
     @apply bg-green-500;
+    animation: pulseDot 2s infinite;
   }
   
   .status-warning::before {
     @apply bg-yellow-500;
+    animation: pulseDot 3s infinite;
   }
   
   .status-error::before {
     @apply bg-red-500;
+    animation: pulseDot 1s infinite;
   }
   
   .status-offline::before {
     @apply bg-gray-500;
+  }
+  
+  @keyframes pulseDot {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .nova-500 {
+    @apply text-[hsl(var(--nova-500))];
+  }
+  
+  .bg-nova-500 {
+    @apply bg-[hsl(var(--nova-500))];
+  }
+  
+  .border-nova-500 {
+    @apply border-[hsl(var(--nova-500))];
+  }
+  
+  .nova-600 {
+    @apply text-[hsl(var(--nova-600))];
+  }
+  
+  .bg-nova-600 {
+    @apply bg-[hsl(var(--nova-600))];
+  }
+  
+  .border-nova-600 {
+    @apply border-[hsl(var(--nova-600))];
   }
 }
