@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -12,7 +11,7 @@ import { VOICE_CONFIG, SYSTEM_CONFIG, AI_CONFIG } from "@/config/env";
 import { 
   ArrowLeft, Save, Mic, Volume2, Brain, Shield, 
   Lightbulb, ChevronDown, ChevronUp, Sparkles, 
-  Zap, Database, Cpu, Globe, Languages, Cloud
+  Zap, Database, Cpu, Globe, Languages, Cloud, X
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -853,7 +852,7 @@ const Settings = () => {
                               Backup Settings
                             </Button>
                             <Button variant="outline" className="w-full text-destructive hover:text-destructive flex items-center justify-center">
-                              <x-circle className="mr-2 h-4 w-4" />
+                              <X className="mr-2 h-4 w-4" />
                               Clear All Data
                             </Button>
                           </div>

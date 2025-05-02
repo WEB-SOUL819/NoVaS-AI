@@ -18,8 +18,8 @@ declare global {
   interface Window {
     alarmListenerSet?: boolean;
     chrome?: ChromeAlarmAPI;
-    checkAlarmsInterval?: number;
-    checkLocalStorageInterval?: number;
+    checkAlarmsInterval?: NodeJS.Timer;
+    checkLocalStorageInterval?: NodeJS.Timer;
   }
 }
 

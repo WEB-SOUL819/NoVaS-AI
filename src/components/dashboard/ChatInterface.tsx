@@ -8,7 +8,7 @@ import MessageBubble from "@/components/MessageBubble";
 import VoiceVisualizer from "@/components/VoiceVisualizer";
 import { Message } from "@/types";
 import { toast } from "sonner";
-import { processWithAI, AUTOMATION_KNOWLEDGE_BASES } from "@/utils/ai";
+import { processWithAI, AUTOMATION_KNOWLEDGE_BASES, isWebSearchQuery } from "@/utils/ai";
 import { searchWeb, extractSearchQuery } from "@/utils/webSearch";
 import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
