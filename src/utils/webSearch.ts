@@ -14,8 +14,9 @@ export async function searchWeb(query: string): Promise<string> {
   try {
     console.log("Searching for information:", query);
     
-    // Check if this is a current events query
-    if (isCurrentEventsQuery(query)) {
+    // Check if this is a current events or news query
+    if (isCurrentEventsQuery(query) || isNewsQuery(query)) {
+      console.log("Detected news/current events query, fetching latest headlines");
       return await searchCurrentEvents();
     }
     
@@ -56,6 +57,34 @@ function isCurrentEventsQuery(query: string): boolean {
   
   const lowerQuery = query.toLowerCase();
   return currentEventsKeywords.some(keyword => lowerQuery.includes(keyword));
+}
+
+/**
+ * Check if query is about news
+ */
+function isNewsQuery(query: string): boolean {
+  const newsKeywords = [
+    'news', 
+    'headlines', 
+    'updates', 
+    'current', 
+    'today', 
+    'latest'
+  ];
+  
+  const lowerQuery = query.toLowerCase();
+  
+  // Check for direct news mentions
+  if (newsKeywords.some(keyword => lowerQuery.includes(keyword))) {
+    return true;
+  }
+  
+  // Check for specific news patterns
+  return lowerQuery.includes('tell me about today') || 
+         lowerQuery.includes('what happened today') ||
+         lowerQuery.includes('what\'s going on') ||
+         lowerQuery.includes('whats going on') ||
+         lowerQuery.startsWith('tell me the news');
 }
 
 /**
@@ -218,4 +247,34 @@ export function extractSearchQuery(text: string): string {
   
   // Return the cleaned text, or the original if cleaning made it too short
   return cleanedText.trim().length > 2 ? cleanedText.trim() : text.trim();
+}
+
+/**
+ * Check if a query is a web search query
+ */
+export function isWebSearchQuery(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  
+  // Check for explicit current events queries
+  if (isCurrentEventsQuery(text) || isNewsQuery(text)) {
+    return true;
+  }
+  
+  // Check for explicit search requests
+  if (lowerText.includes('search for') || 
+      lowerText.includes('find information') || 
+      lowerText.includes('look up') ||
+      lowerText.includes('search the web')) {
+    return true;
+  }
+  
+  // Check for fact-based questions that would benefit from web data
+  if (lowerText.startsWith('what is') || 
+      lowerText.startsWith('who is') || 
+      lowerText.startsWith('where is') ||
+      lowerText.startsWith('when did')) {
+    return true;
+  }
+  
+  return false;
 }

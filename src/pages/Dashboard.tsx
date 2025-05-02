@@ -9,6 +9,7 @@ import StatusIndicator from "@/components/StatusIndicator";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
 import { getUserGreeting } from "@/utils/userGreeting";
+import AIModeSelector, { AIMode } from "@/components/AIModeSelector";
 
 // Import our new components
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -82,6 +83,7 @@ const Dashboard = () => {
     activeModules: DEMO_MODULES.filter(m => m.isActive),
   });
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [currentAIMode, setCurrentAIMode] = useState<AIMode>('assistant');
   
   const { isDevMode, userRole } = useDevMode();
   
@@ -99,6 +101,39 @@ const Dashboard = () => {
       return prev;
     });
   }, [user]);
+
+  // Handle AI mode change
+  const handleAIModeChange = (mode: AIMode) => {
+    setCurrentAIMode(mode);
+    
+    // Add a system message to indicate the mode change
+    const modeMessages: Record<AIMode, string> = {
+      assistant: "I'm now in Assistant mode. How can I help you?",
+      oracle: "Oracle mode activated. I'll focus on providing knowledge and predictions.",
+      alfred: "Alfred mode at your service. I'll prioritize task management and personal assistance.",
+      hacker: "Hacker mode engaged. I'll focus on ethical hacking and security topics.",
+      pentester: "Pentester mode activated. Advanced security testing assistance is now available.",
+      analyst: "Analyst mode ready. I'll help with data analysis and intelligence gathering."
+    };
+    
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        role: "system",
+        content: `Mode changed to ${mode}`,
+        timestamp: new Date(),
+      },
+      {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: modeMessages[mode],
+        timestamp: new Date(),
+      }
+    ]);
+    
+    toast.success(`AI mode changed to ${mode}`);
+  };
   
   const handleSignOut = async () => {
     try {
@@ -129,8 +164,9 @@ const Dashboard = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex-1 flex flex-col h-full overflow-hidden"
         >
-          <div className="p-4">
+          <div className="p-4 flex justify-between items-center">
             <StatusIndicator status={systemStatus} />
+            <AIModeSelector currentMode={currentAIMode} onModeChange={handleAIModeChange} />
           </div>
           
           <ChatInterface 

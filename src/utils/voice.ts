@@ -1,5 +1,7 @@
-
 import { API_KEYS, VOICE_CONFIG, SYSTEM_CONFIG } from "@/config/env";
+
+// Global reference to the currently playing audio
+let currentAudio: HTMLAudioElement | null = null;
 
 /**
  * Text-to-Speech using ElevenLabs API
@@ -194,7 +196,13 @@ export async function playAudio(audioBlob: Blob): Promise<void> {
     const url = URL.createObjectURL(audioBlob);
     console.log("Audio URL created:", url);
     
+    // Stop any currently playing audio
+    if (currentAudio) {
+      stopAudio();
+    }
+    
     const audio = new Audio(url);
+    currentAudio = audio; // Store reference to current audio
     
     return new Promise((resolve, reject) => {
       console.log("Setting up audio event handlers...");
@@ -210,24 +218,48 @@ export async function playAudio(audioBlob: Blob): Promise<void> {
       audio.onended = () => {
         console.log("Audio playback ended");
         URL.revokeObjectURL(url);
+        currentAudio = null; // Clear reference
         resolve();
       };
       
       audio.onerror = (error) => {
         console.error("Audio playback error:", error);
         URL.revokeObjectURL(url);
+        currentAudio = null; // Clear reference
         reject(error);
       };
       
       console.log("Starting audio playback...");
       audio.play().catch(error => {
         console.error("Error playing audio:", error);
+        currentAudio = null; // Clear reference
         reject(error);
       });
     });
   } catch (error) {
     console.error("Error in playAudio:", error);
     throw error;
+  }
+}
+
+/**
+ * Stop currently playing audio
+ */
+export function stopAudio(): void {
+  if (currentAudio) {
+    console.log("Stopping audio playback...");
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+    
+    // Also stop any queued browser TTS
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    
+    console.log("Audio playback stopped");
+  } else {
+    console.log("No audio currently playing");
   }
 }
 

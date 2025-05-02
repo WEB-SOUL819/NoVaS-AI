@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Send, VolumeX, Volume2 } from "lucide-react";
+import { Mic, MicOff, Send, VolumeX, Volume2, Square } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MessageBubble from "@/components/MessageBubble";
 import VoiceVisualizer from "@/components/VoiceVisualizer";
@@ -10,11 +9,11 @@ import { Message } from "@/types";
 import { toast } from "sonner";
 import { processWithAI, AUTOMATION_KNOWLEDGE_BASES, isWebSearchQuery } from "@/utils/ai";
 import { searchWeb, extractSearchQuery } from "@/utils/webSearch";
-import { textToSpeech, playAudio, startSpeechRecognition } from "@/utils/voice";
-import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
+import { textToSpeech, playAudio, startSpeechRecognition, stopAudio } from "@/utils/voice";
 import { getCurrentDateTime, getTimeBasedGreeting } from "@/utils/userGreeting";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
+import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -85,6 +84,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     };
   }, [micEnabled, setSystemStatus]);
+
+  // Function to handle stopping speech
+  const handleStopSpeech = () => {
+    stopAudio();
+    setSystemStatus(prev => ({ ...prev, isSpeaking: false }));
+    toast.info("Speech stopped");
+  };
 
   const saveMessageToSupabase = async (message: Message, conversationId?: string) => {
     if (!user) return null;
@@ -386,15 +392,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
           </div>
           
-          <Button
-            variant={voiceEnabled ? "default" : "outline"}
-            size="icon"
-            onClick={() => setVoiceEnabled(!voiceEnabled)}
-            className={voiceEnabled ? "bg-secondary hover:bg-secondary/90" : "text-muted-foreground"}
-            title={voiceEnabled ? "Turn off voice output" : "Turn on voice output"}
-          >
-            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </Button>
+          {systemStatus.isSpeaking ? (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleStopSpeech}
+              title="Stop speaking"
+            >
+              <Square className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant={voiceEnabled ? "default" : "outline"}
+              size="icon"
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className={voiceEnabled ? "bg-secondary hover:bg-secondary/90" : "text-muted-foreground"}
+              title={voiceEnabled ? "Turn off voice output" : "Turn on voice output"}
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+          )}
           
           <Button onClick={() => handleSubmit()} disabled={isTyping || !inputMessage.trim()} 
             className="transition-all duration-300 hover:scale-105">
