@@ -1,3 +1,4 @@
+
 import { SYSTEM_PROMPTS } from "@/config/env";
 import { Message, AutomationTask, AutomationWorkflow } from "@/types";
 import { processWithAI } from "./aiService";
@@ -477,10 +478,11 @@ function setServiceWorkerAlarm(description: string, timeMatch: RegExpMatchArray 
           // Use the standard setTimeout approach first
           setTimeout(() => {
             if (Notification.permission === 'granted') {
+              // Fixed: Remove 'vibrate' which is not recognized in NotificationOptions type
               registration.showNotification("Reminder", {
                 body: description,
-                icon: "/favicon.ico",
-                vibrate: [200, 100, 200]
+                icon: "/favicon.ico"
+                // Removed vibrate property as it's not recognized in the TypeScript type
               });
             }
           }, delay);
