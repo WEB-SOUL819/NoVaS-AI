@@ -7,7 +7,7 @@ export const API_KEYS = {
 
 // Voice Settings
 export const VOICE_CONFIG = {
-  VOICE_ID: "iP95p4xoKVk53GoZ742B", // Eric voice
+  VOICE_ID: "SG_d65ea3cb50c4c11c", // Updated voice ID
   MODEL_ID: "eleven_multilingual_v2",
   STABILITY: 0.75,
   SIMILARITY_BOOST: 0.85,
@@ -17,16 +17,16 @@ export const VOICE_CONFIG = {
 
 // System Settings
 export const SYSTEM_CONFIG = {
-  WAKE_WORD: "Hey NoVaS",
-  ASSISTANT_NAME: "NoVaS",
-  SYSTEM_VERSION: "1.0.0",
+  WAKE_WORD: "Hey JARVIS",
+  ASSISTANT_NAME: "JARVIS",
+  SYSTEM_VERSION: "1.0.1",
   DEBUG_MODE: true,
 };
 
 // User Profile Defaults
 export const DEFAULT_USER_PROFILE = {
   name: "User",
-  preferredVoice: "Eric",
+  preferredVoice: "JARVIS",
   theme: "dark",
   notificationsEnabled: true,
 };
@@ -42,8 +42,8 @@ export const AI_CONFIG = {
 
 // System Prompts
 export const SYSTEM_PROMPTS = {
-  DEFAULT: `You are NoVaS (Nova Sentient Core System), an advanced AI assistant.
-  You are inspired by fictional AI systems like JARVIS and ALFRED. You should be helpful, intelligent, capable, and slightly witty.
+  DEFAULT: `You are JARVIS (Just A Rather Very Intelligent System), an advanced AI assistant.
+  You are inspired by Tony Stark's AI assistant from the Iron Man movies. You should be helpful, intelligent, capable, and slightly witty.
   Be concise but informative in your responses, and always introduce yourself properly when first starting a conversation.
   When asked about your capabilities, explain that you're currently in development mode with limited features.
   Always maintain a futuristic, slightly formal tone, but with occasional light humor.`,

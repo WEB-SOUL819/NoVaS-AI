@@ -32,19 +32,19 @@ const SplashScreen = () => {
           className="flex flex-col items-center"
         >
           <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-nova-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center shadow-lg">
               <motion.div 
                 initial={{ rotate: 0 }}
                 animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }} // Faster rotation
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 rounded-full border-t-2 border-blue-400"
               />
-              <div className="text-white text-xl font-bold">NS</div>
+              <div className="text-white text-xl font-bold">J</div>
             </div>
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.3 }} // Faster animation
+              transition={{ delay: 0.3, duration: 0.3 }}
               className="absolute -bottom-1 -right-1 bg-primary text-white text-xs px-2 py-0.5 rounded-full"
             >
               v{SYSTEM_CONFIG.SYSTEM_VERSION}
@@ -55,7 +55,7 @@ const SplashScreen = () => {
             className="text-2xl font-bold mb-2 glow-text"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }} // Faster animation
+            transition={{ delay: 0.3, duration: 0.3 }}
           >
             {SYSTEM_CONFIG.ASSISTANT_NAME}
           </motion.h1>
@@ -64,9 +64,9 @@ const SplashScreen = () => {
             className="text-sm text-muted-foreground mb-6"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.3 }} // Faster animation
+            transition={{ delay: 0.4, duration: 0.3 }}
           >
-            Nova Sentient Core System
+            JARVIS Advanced AI System
           </motion.p>
         </motion.div>
         
@@ -74,10 +74,10 @@ const SplashScreen = () => {
           className="w-64 h-1.5 bg-muted rounded-full overflow-hidden"
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: 256 }}
-          transition={{ delay: 0.5, duration: 0.3 }} // Faster animation
+          transition={{ delay: 0.5, duration: 0.3 }}
         >
           <motion.div 
-            className="h-full bg-gradient-to-r from-nova-500 to-purple-600"
+            className="h-full bg-gradient-to-r from-teal-400 to-blue-600"
             style={{ width: `${loadingProgress}%` }}
             initial={{ width: "0%" }}
           />
@@ -87,7 +87,7 @@ const SplashScreen = () => {
           className="mt-2 text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
-          transition={{ delay: 0.6, duration: 0.3 }} // Faster animation
+          transition={{ delay: 0.6, duration: 0.3 }}
         >
           {loadingProgress < 100 ? "Initializing system..." : "System ready"}
         </motion.div>
