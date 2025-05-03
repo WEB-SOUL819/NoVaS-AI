@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, History } from "lucide-react";
+import { Menu, User, Settings as SettingsIcon, LogOut, BrainCircuit, History, Sidebar } from "lucide-react";
 import { SYSTEM_CONFIG } from "@/config/env";
 import AssistantAvatar from "@/components/AssistantAvatar";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
@@ -19,21 +19,27 @@ interface DashboardHeaderProps {
   isDevMode: boolean;
   userRole: string;
   onSignOut: () => void;
+  onToggleSystemPanel?: () => void;
+  showSystemPanelButton?: boolean;
+  isMobile?: boolean;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
   isDevMode, 
   userRole, 
-  onSignOut 
+  onSignOut,
+  onToggleSystemPanel,
+  showSystemPanelButton = false,
+  isMobile = false
 }) => {
   return (
     <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
-      <div className="container flex items-center justify-between">
+      <div className={`container flex items-center ${isMobile ? "justify-between" : "justify-between"}`}>
         <div className="flex items-center space-x-3">
           <AssistantAvatar size="sm" />
-          <h1 className="text-xl font-bold text-white">
+          <h1 className={`${isMobile ? "text-lg" : "text-xl"} font-bold text-white`}>
             {SYSTEM_CONFIG.ASSISTANT_NAME}
-            <span className="text-xs text-gray-400 ml-2">v{SYSTEM_CONFIG.SYSTEM_VERSION}</span>
+            {!isMobile && <span className="text-xs text-gray-400 ml-2">v{SYSTEM_CONFIG.SYSTEM_VERSION}</span>}
             {isDevMode && (
               <span className="ml-2 text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
                 {userRole}
@@ -62,6 +68,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </nav>
         
         <div className="md:hidden flex items-center space-x-2">
+          {showSystemPanelButton && onToggleSystemPanel && (
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={onToggleSystemPanel}
+              className="mr-1"
+            >
+              <Sidebar className="h-5 w-5" />
+            </Button>
+          )}
           <ThemeSwitcher />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

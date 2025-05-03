@@ -21,6 +21,7 @@ import {
 import { useDevMode } from "@/contexts/DevModeContext";
 import { UserRole } from "@/types/roles";
 import { Badge } from "./ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type AIMode = 'assistant' | 'oracle' | 'alfred' | 'hacker' | 'pentester' | 'analyst';
 
@@ -31,6 +32,7 @@ interface AiModeSelectorProps {
 
 const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChange }) => {
   const { isDevMode, userRole } = useDevMode();
+  const isMobile = useIsMobile();
   
   // Define all available modes with their access restrictions
   const modes = [
@@ -92,19 +94,19 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className={`flex items-center gap-2 ${isMobile ? "text-sm px-2 py-1 h-auto" : ""}`}>
           {currentModeInfo.icon}
-          <span>{currentModeInfo.name}</span>
+          <span>{isMobile ? currentModeInfo.name.substring(0, 4) : currentModeInfo.name}</span>
           <Badge 
             variant={isDevMode ? "outline" : "secondary"}
-            className="ml-2 text-xs px-1"
+            className={`ml-2 text-xs px-1 ${isMobile ? "hidden" : ""}`}
           >
             Mode
           </Badge>
-          <ChevronDown className="h-4 w-4 ml-2" />
+          <ChevronDown className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} ml-1`} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className={`${isMobile ? "w-48" : "w-56"}`}>
         <DropdownMenuLabel>Select AI Mode</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
@@ -117,11 +119,13 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
               currentMode === mode.id ? "bg-accent/50" : ""
             } ${!canAccessMode(mode.requiredRole) ? "opacity-50" : ""}`}
           >
-            <div className="flex items-center">
+            <div className="flex items-center w-full">
               {mode.icon}
-              <div>
-                <p>{mode.name}</p>
-                <p className="text-xs text-muted-foreground">{mode.description}</p>
+              <div className="flex-1">
+                <p className={isMobile ? "text-sm" : ""}>{mode.name}</p>
+                <p className={`text-xs text-muted-foreground ${isMobile ? "hidden sm:block" : ""}`}>
+                  {mode.description}
+                </p>
               </div>
               {!canAccessMode(mode.requiredRole) && (
                 <Lock className="h-3 w-3 ml-auto text-muted-foreground" />

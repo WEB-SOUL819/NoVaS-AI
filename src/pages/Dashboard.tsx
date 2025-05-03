@@ -9,6 +9,7 @@ import StatusIndicator from "@/components/StatusIndicator";
 import { SYSTEM_CONFIG } from "@/config/env";
 import { Message, Module, SystemStatus } from "@/types";
 import { getUserGreeting } from "@/utils/userGreeting";
+import { useIsMobile } from "@/hooks/use-mobile";
 import AIModeSelector, { AIMode } from "@/components/AIModeSelector";
 
 // Import our new components
@@ -65,6 +66,7 @@ const DEMO_MODULES: Module[] = [
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -82,7 +84,7 @@ const Dashboard = () => {
     lastUpdated: new Date(),
     activeModules: DEMO_MODULES.filter(m => m.isActive),
   });
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showSystemPanel, setShowSystemPanel] = useState(!isMobile);
   const [currentAIMode, setCurrentAIMode] = useState<AIMode>('assistant');
   
   const { isDevMode, userRole } = useDevMode();
@@ -101,6 +103,11 @@ const Dashboard = () => {
       return prev;
     });
   }, [user]);
+
+  // Set system panel visibility based on screen size
+  useEffect(() => {
+    setShowSystemPanel(!isMobile);
+  }, [isMobile]);
 
   // Handle AI mode change
   const handleAIModeChange = (mode: AIMode) => {
@@ -143,6 +150,10 @@ const Dashboard = () => {
       toast.error("Error signing out. Please try again.");
     }
   };
+
+  const toggleSystemPanel = () => {
+    setShowSystemPanel(prev => !prev);
+  };
   
   return (
     <motion.div 
@@ -154,17 +165,20 @@ const Dashboard = () => {
       <DashboardHeader 
         isDevMode={isDevMode} 
         userRole={userRole} 
-        onSignOut={handleSignOut} 
+        onSignOut={handleSignOut}
+        onToggleSystemPanel={toggleSystemPanel}
+        showSystemPanelButton={isMobile}
+        isMobile={isMobile}
       />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex-1 flex flex-col h-full overflow-hidden"
         >
-          <div className="p-4 flex justify-between items-center">
+          <div className={`p-4 flex ${isMobile ? "flex-col gap-2" : "justify-between"} items-center`}>
             <StatusIndicator status={systemStatus} />
             <AIModeSelector currentMode={currentAIMode} onModeChange={handleAIModeChange} />
           </div>
@@ -175,13 +189,19 @@ const Dashboard = () => {
             systemStatus={systemStatus}
             setSystemStatus={setSystemStatus}
             user={user}
+            isMobile={isMobile}
           />
         </motion.div>
         
-        <SystemPanel 
-          systemStatus={systemStatus}
-          modules={DEMO_MODULES}
-        />
+        {/* System Panel - conditionally rendered based on showSystemPanel state */}
+        {showSystemPanel && (
+          <SystemPanel 
+            systemStatus={systemStatus}
+            modules={DEMO_MODULES}
+            isMobile={isMobile}
+            onClose={isMobile ? () => setShowSystemPanel(false) : undefined}
+          />
+        )}
       </div>
     </motion.div>
   );

@@ -7,13 +7,29 @@ import MessageBubble from "@/components/MessageBubble";
 import VoiceVisualizer from "@/components/VoiceVisualizer";
 import { Message } from "@/types";
 import { toast } from "sonner";
-import { processWithAI, AUTOMATION_KNOWLEDGE_BASES, isWebSearchQuery } from "@/utils/ai";
+import { processWithAI, AUTOMATION_KNOWLEDGE_BASES } from "@/utils/ai";
 import { searchWeb, extractSearchQuery } from "@/utils/webSearch";
 import { textToSpeech, playAudio, startSpeechRecognition, stopAudio } from "@/utils/voice";
 import { getCurrentDateTime, getTimeBasedGreeting } from "@/utils/userGreeting";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
+
+// Helper function to check if a query is for web search
+const isWebSearchQuery = (text: string): boolean => {
+  const searchPatterns = [
+    /search (?:for |about )?(.*)/i,
+    /look up (?:for |about )?(.*)/i,
+    /find (?:info|information) (?:on|about) (.*)/i,
+    /what'?s (?:happening|going on|new)(?: with| about)? (.*)/i,
+    /news (?:about|on|regarding) (.*)/i,
+    /tell me (?:about |the )?(news|headlines)(?: about| on| regarding)? (.*)?/i,
+    /show me (?:the )?(news|headlines)(?: about| on| regarding)? (.*)?/i,
+    /(?:latest|recent|current) (?:news|updates|stories)(?: about| on| regarding)? (.*)?/i
+  ];
+  
+  return searchPatterns.some(pattern => pattern.test(text));
+};
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -25,6 +41,7 @@ interface ChatInterfaceProps {
   };
   setSystemStatus: React.Dispatch<React.SetStateAction<any>>;
   user: any;
+  isMobile?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -32,7 +49,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   setMessages, 
   systemStatus,
   setSystemStatus,
-  user
+  user,
+  isMobile = false
 }) => {
   const { theme } = useTheme();
   const [inputMessage, setInputMessage] = useState("");
@@ -313,7 +331,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         initial="hidden"
         animate="visible"
       >
-        <div className="flex flex-col space-y-3 max-w-3xl mx-auto">
+        <div className={`flex flex-col space-y-3 ${isMobile ? "max-w-full" : "max-w-3xl mx-auto"}`}>
           <AnimatePresence>
             {messages.map((message, index) => (
               <motion.div
@@ -357,7 +375,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         transition={{ duration: 0.5, delay: 0.3 }}
         className="p-4 border-t border-muted glass-panel"
       >
-        <div className="flex items-end space-x-2 max-w-3xl mx-auto">
+        <div className={`flex items-end space-x-2 ${isMobile ? "" : "max-w-3xl mx-auto"}`}>
           <Button
             variant={micEnabled ? "default" : "outline"}
             size="icon"
@@ -374,6 +392,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               className="resize-none min-h-[60px] pr-10"
+              rows={isMobile ? 2 : 3}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -413,10 +432,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </Button>
           )}
           
-          <Button onClick={() => handleSubmit()} disabled={isTyping || !inputMessage.trim()} 
-            className="transition-all duration-300 hover:scale-105">
+          <Button 
+            onClick={() => handleSubmit()} 
+            disabled={isTyping || !inputMessage.trim()} 
+            className={`transition-all duration-300 hover:scale-105 ${isMobile ? "px-3" : ""}`}
+          >
             <Send className="h-4 w-4 mr-2" />
-            Send
+            {!isMobile && "Send"}
           </Button>
         </div>
       </motion.div>
