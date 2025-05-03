@@ -1,8 +1,7 @@
-
 // Environment variables and API keys
 export const API_KEYS = {
   GEMINI_API_KEY: "AIzaSyDOoiTme5ZUuZS5jkotb96xyRyjcLADUik",
-  ELEVEN_LABS_API_KEY: "1v2NdFT6keFH9fMOy0Ye",
+  ELEVEN_LABS_API_KEY: "sk_70febe34217dca3ddd97abd33b99b627c589e8235e4e775c",
 };
 
 // Voice Settings

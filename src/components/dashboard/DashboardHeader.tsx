@@ -36,8 +36,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <header className="p-4 border-b border-gray-800 glass-panel sticky top-0 z-10">
       <div className={`container flex items-center ${isMobile ? "justify-between" : "justify-between"}`}>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center">
-            <span className="text-white text-xl font-bold">J</span>
+          <div className="w-10 h-10 rounded-full overflow-hidden">
+            <img 
+              src="/lovable-uploads/logo.png" 
+              alt="JARVIS Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className={`${isMobile ? "text-lg" : "text-xl"} font-bold text-white`}>
             {SYSTEM_CONFIG.ASSISTANT_NAME}

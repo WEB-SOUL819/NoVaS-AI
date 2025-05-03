@@ -32,15 +32,11 @@ const SplashScreen = () => {
           className="flex flex-col items-center"
         >
           <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center shadow-lg">
-              <motion.div 
-                initial={{ rotate: 0 }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border-t-2 border-blue-400"
-              />
-              <div className="text-white text-xl font-bold">J</div>
-            </div>
+            <img 
+              src="/lovable-uploads/logo.png" 
+              alt="JARVIS Logo" 
+              className="w-24 h-24 rounded-full object-cover shadow-lg"
+            />
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
