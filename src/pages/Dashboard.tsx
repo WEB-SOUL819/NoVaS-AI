@@ -155,7 +155,7 @@ const Dashboard = () => {
       pentester: "Pentester mode activated. Advanced security testing assistance is now available.",
       analyst: "Analyst mode ready. I'll help with data analysis and intelligence gathering.",
       weather: "Weather mode activated. I can provide weather forecasts and information for any location.",
-      jarvis: "JARVIS mode activated. I'm at your service with enhanced capabilities and responsiveness."
+      jarvis: "JARVIS mode activated. I'll respond with enhanced capabilities and a Tony Stark-inspired personality."
     };
     
     setMessages(prev => [

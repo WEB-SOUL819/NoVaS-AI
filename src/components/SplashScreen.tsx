@@ -34,7 +34,7 @@ const SplashScreen = () => {
           <div className="relative mb-6">
             <img 
               src="/lovable-uploads/logo.png" 
-              alt="JARVIS Logo" 
+              alt="NOVAS Logo" 
               className="w-24 h-24 rounded-full object-cover shadow-lg"
             />
             <motion.div
@@ -62,7 +62,7 @@ const SplashScreen = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.3 }}
           >
-            JARVIS Advanced AI System
+            NOVAS Advanced AI System
           </motion.p>
         </motion.div>
         

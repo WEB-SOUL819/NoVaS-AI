@@ -46,6 +46,14 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
       requiredRole: 'user' as UserRole
     },
     { 
+      id: 'jarvis' as AIMode,
+      name: 'JARVIS', 
+      description: 'Advanced AI assistant with enhanced capabilities',
+      icon: <Bot className="h-4 w-4 mr-2" />,
+      requiredRole: 'user' as UserRole,
+      featured: true
+    },
+    { 
       id: 'oracle' as AIMode,
       name: 'Oracle', 
       description: 'Knowledge-focused prediction mode',
@@ -57,13 +65,6 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
       name: 'Alfred', 
       description: 'Personal butler and task management mode',
       icon: <Shield className="h-4 w-4 mr-2" />,
-      requiredRole: 'user' as UserRole
-    },
-    { 
-      id: 'jarvis' as AIMode,
-      name: 'JARVIS', 
-      description: 'Advanced AI assistant with enhanced capabilities',
-      icon: <Bot className="h-4 w-4 mr-2" />,
       requiredRole: 'user' as UserRole
     },
     { 
@@ -126,7 +127,38 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
         <DropdownMenuLabel>Select AI Mode</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {modes.map((mode) => (
+        {/* Featured mode - JARVIS */}
+        {modes.filter(mode => mode.featured && canAccessMode(mode.requiredRole)).map((mode) => (
+          <DropdownMenuItem
+            key={mode.id}
+            onClick={() => canAccessMode(mode.requiredRole) && onModeChange(mode.id)}
+            disabled={!canAccessMode(mode.requiredRole)}
+            className={`flex items-center ${
+              currentMode === mode.id ? "bg-accent/50" : ""
+            } ${!canAccessMode(mode.requiredRole) ? "opacity-50" : ""} bg-gradient-to-r from-blue-900/20 to-teal-900/20 mb-1`}
+          >
+            <div className="flex items-center w-full">
+              {mode.icon}
+              <div className="flex-1">
+                <p className={`${isMobile ? "text-sm" : ""} font-semibold`}>{mode.name}</p>
+                <p className={`text-xs text-muted-foreground ${isMobile ? "hidden sm:block" : ""}`}>
+                  {mode.description}
+                </p>
+              </div>
+              {!canAccessMode(mode.requiredRole) && (
+                <Lock className="h-3 w-3 ml-auto text-muted-foreground" />
+              )}
+            </div>
+          </DropdownMenuItem>
+        ))}
+        
+        {/* Show separator if we have featured modes */}
+        {modes.some(mode => mode.featured && canAccessMode(mode.requiredRole)) && (
+          <DropdownMenuSeparator />
+        )}
+        
+        {/* Regular modes */}
+        {modes.filter(mode => !mode.featured).map((mode) => (
           <DropdownMenuItem
             key={mode.id}
             onClick={() => canAccessMode(mode.requiredRole) && onModeChange(mode.id)}

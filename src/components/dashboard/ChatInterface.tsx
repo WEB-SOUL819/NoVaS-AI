@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -321,7 +320,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             systemPrompt = "You are Alfred, a personal butler AI. Prioritize organization, task management, and helpfulness. Be formal yet warm, and focus on helping the user manage their tasks, schedule, and daily life.";
             break;
           case 'jarvis':
-            systemPrompt = "You are JARVIS, an advanced AI assistant. Respond with efficiency, intelligence, and a touch of wit. You excel at providing concise, accurate information and solutions for various tasks.";
+            systemPrompt = "You are JARVIS (Just A Rather Very Intelligent System), an AI assistant inspired by Tony Stark's AI from Iron Man. Respond with efficiency, intelligence, and a touch of wit. You excel at providing concise, accurate information with a slightly sarcastic, Stark-inspired personality.";
             break;
           case 'hacker':
             systemPrompt = "You are a white-hat hacking assistant. Provide information about ethical hacking, cybersecurity best practices, and security research. Never provide information for malicious purposes.";

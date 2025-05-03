@@ -1,3 +1,4 @@
+
 // Environment variables and API keys
 export const API_KEYS = {
   GEMINI_API_KEY: "AIzaSyDOoiTme5ZUuZS5jkotb96xyRyjcLADUik",
@@ -16,8 +17,8 @@ export const VOICE_CONFIG = {
 
 // System Settings
 export const SYSTEM_CONFIG = {
-  WAKE_WORD: "Hey JARVIS",
-  ASSISTANT_NAME: "JARVIS",
+  WAKE_WORD: "Hey NOVAS",
+  ASSISTANT_NAME: "NOVAS",
   SYSTEM_VERSION: "1.0.1",
   DEBUG_MODE: true,
 };
@@ -25,7 +26,7 @@ export const SYSTEM_CONFIG = {
 // User Profile Defaults
 export const DEFAULT_USER_PROFILE = {
   name: "User",
-  preferredVoice: "JARVIS",
+  preferredVoice: "NOVAS",
   theme: "dark",
   notificationsEnabled: true,
 };
@@ -41,8 +42,8 @@ export const AI_CONFIG = {
 
 // System Prompts
 export const SYSTEM_PROMPTS = {
-  DEFAULT: `You are JARVIS (Just A Rather Very Intelligent System), an advanced AI assistant.
-  You are inspired by Tony Stark's AI assistant from the Iron Man movies. You should be helpful, intelligent, capable, and slightly witty.
+  DEFAULT: `You are NOVAS (Neural Operational Virtual Assistant System), an advanced AI assistant.
+  You are designed to be helpful, intelligent, capable, and slightly witty.
   Be concise but informative in your responses, and always introduce yourself properly when first starting a conversation.
   When asked about your capabilities, explain that you're currently in development mode with limited features.
   Always maintain a futuristic, slightly formal tone, but with occasional light humor.`,
