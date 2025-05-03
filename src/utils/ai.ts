@@ -5,6 +5,7 @@ import { analyzeForAutomation, generateAutomationWorkflow } from "./automationUt
 import { extractKeywords } from "./conversationUtils";
 import { searchWeb, extractSearchQuery } from "./webSearch";
 import { searchWikipedia, isWikipediaQuery, extractWikipediaSearchTerm } from "./wikipedia";
+import { getCurrentWeather, getWeatherForecast } from "./weatherService";
 
 // Function to determine if a query needs web search
 export function isWebSearchQuery(text: string): boolean {
@@ -21,7 +22,10 @@ export function isWebSearchQuery(text: string): boolean {
       lowerText.includes('recent events') ||
       lowerText.includes('whats happening') ||
       lowerText.includes('what is happening') ||
-      lowerText.includes('world news')) {
+      lowerText.includes('world news') ||
+      lowerText.includes('current news') ||
+      lowerText.includes('today news') ||
+      lowerText.includes('news headlines')) {
     return true;
   }
   
@@ -50,6 +54,47 @@ export function isWebSearchQuery(text: string): boolean {
   }
   
   return false;
+}
+
+// Function to determine if a query is about weather
+export function isWeatherQuery(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  
+  if (lowerText.includes('weather in') || 
+      lowerText.includes('weather at') || 
+      lowerText.includes('weather for') ||
+      lowerText.includes('what\'s the weather') ||
+      lowerText.includes('what is the weather') ||
+      lowerText.includes('forecast for') ||
+      lowerText.includes('temperature in')) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Function to extract location from weather query
+export function extractWeatherLocation(text: string): string | null {
+  const weatherPatterns = [
+    /weather (?:in|for|at) (.*)/i,
+    /(?:what'?s|what is) the weather (?:like )?(in|for|at)? (.*)/i,
+    /forecast (?:for|in) (.*)/i,
+    /temperature (?:in|at) (.*)/i,
+    /(?:how'?s|how is) the weather (?:in|at) (.*)/i
+  ];
+  
+  for (const pattern of weatherPatterns) {
+    const match = text.match(pattern);
+    if (match && match.length > 1) {
+      // If pattern has "in/for/at" as a captured group, use the next group
+      if (match[1].match(/^(in|for|at)$/i) && match.length > 2) {
+        return match[2].trim();
+      }
+      return match[1].trim();
+    }
+  }
+  
+  return null;
 }
 
 // Add knowledge bases for automation and news
@@ -158,6 +203,11 @@ export const AUTOMATION_KNOWLEDGE_BASES = [
     id: "entertainment-news",
     name: "Entertainment News",
     description: "Celebrity updates, movie releases, and entertainment industry news"
+  },
+  {
+    id: "weather-forecasting",
+    name: "Weather Forecasting",
+    description: "Weather patterns, forecasts, and meteorological information"
   }
 ];
 
@@ -170,5 +220,7 @@ export {
   searchWeb,
   searchWikipedia,
   isWikipediaQuery,
-  extractWikipediaSearchTerm
+  extractWikipediaSearchTerm,
+  getCurrentWeather,
+  getWeatherForecast
 };

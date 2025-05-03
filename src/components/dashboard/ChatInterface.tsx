@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { getCurrentDateTime, getTimeBasedGreeting } from "@/utils/userGreeting";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/contexts/ThemeContext";
 import { isWikipediaQuery, extractWikipediaSearchTerm, searchWikipedia } from "@/utils/wikipedia";
+import { AIMode } from "@/components/AIModeSelector";
+import { getCurrentWeather } from "@/utils/weatherService";
 
 // Helper function to check if a query is for web search
 const isWebSearchQuery = (text: string): boolean => {
@@ -31,6 +34,43 @@ const isWebSearchQuery = (text: string): boolean => {
   return searchPatterns.some(pattern => pattern.test(text));
 };
 
+// Helper function to check if query is about weather
+const isWeatherQuery = (text: string): boolean => {
+  const weatherPatterns = [
+    /weather (?:in|for|at) (.*)/i,
+    /(?:what'?s|what is) the weather (?:like )?(in|for|at)? (.*)/i,
+    /forecast (?:for|in) (.*)/i,
+    /temperature (?:in|at) (.*)/i,
+    /(?:how'?s|how is) the weather (?:in|at) (.*)/i
+  ];
+  
+  return weatherPatterns.some(pattern => pattern.test(text));
+};
+
+// Extract location from weather query
+const extractWeatherLocation = (text: string): string | null => {
+  const weatherPatterns = [
+    /weather (?:in|for|at) (.*)/i,
+    /(?:what'?s|what is) the weather (?:like )?(in|for|at)? (.*)/i,
+    /forecast (?:for|in) (.*)/i,
+    /temperature (?:in|at) (.*)/i,
+    /(?:how'?s|how is) the weather (?:in|at) (.*)/i
+  ];
+  
+  for (const pattern of weatherPatterns) {
+    const match = text.match(pattern);
+    if (match && match.length > 1) {
+      // If pattern has "in/for/at" as a captured group, use the next group
+      if (match[1].match(/^(in|for|at)$/i) && match.length > 2) {
+        return match[2].trim();
+      }
+      return match[1].trim();
+    }
+  }
+  
+  return null;
+};
+
 interface ChatInterfaceProps {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
@@ -42,6 +82,7 @@ interface ChatInterfaceProps {
   setSystemStatus: React.Dispatch<React.SetStateAction<any>>;
   user: any;
   isMobile?: boolean;
+  currentMode?: AIMode;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -50,7 +91,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   systemStatus,
   setSystemStatus,
   user,
-  isMobile = false
+  isMobile = false,
+  currentMode = 'assistant'
 }) => {
   const { theme } = useTheme();
   const [inputMessage, setInputMessage] = useState("");
@@ -211,6 +253,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           text: `I am an advanced AI assistant. I'm designed to assist with various tasks including information retrieval, knowledge processing, and voice interactions. How can I help you today?`
         };
       }
+      // Check for weather queries
+      else if (isWeatherQuery(messageText) || currentMode === 'weather') {
+        const location = extractWeatherLocation(messageText);
+        
+        if (location) {
+          try {
+            const weatherData = await getCurrentWeather(location);
+            
+            if (weatherData) {
+              response = {
+                text: `Current weather in ${weatherData.location}, ${weatherData.country}: ${weatherData.temperature}°C, ${weatherData.description}. Humidity: ${weatherData.humidity}%, Wind speed: ${weatherData.windSpeed} m/s.`
+              };
+            } else {
+              response = {
+                text: `I couldn't find weather data for "${location}". Please check the spelling or try another location.`
+              };
+            }
+          } catch (error) {
+            console.error("Weather fetch error:", error);
+            response = {
+              text: `I'm having trouble getting weather information right now. Please try again later.`
+            };
+          }
+        }
+      }
       // Check for web search queries - prioritize this for news related queries
       else if (isWebSearchQuery(messageText)) {
         try {
@@ -241,9 +308,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
       }
       
-      // If no local processing, use AI
+      // If no local processing, use AI with the current mode context
       if (!response) {
-        response = await processWithAI([...messages, userMessage]);
+        let systemPrompt = "You are an advanced AI assistant.";
+        
+        // Adjust system prompt based on the current mode
+        switch(currentMode) {
+          case 'oracle':
+            systemPrompt = "You are an Oracle AI with knowledge-focused capabilities. Provide detailed, insightful analysis and predictions. Your answers should be thoughtful, evidence-based, and consider multiple perspectives.";
+            break;
+          case 'alfred':
+            systemPrompt = "You are Alfred, a personal butler AI. Prioritize organization, task management, and helpfulness. Be formal yet warm, and focus on helping the user manage their tasks, schedule, and daily life.";
+            break;
+          case 'jarvis':
+            systemPrompt = "You are JARVIS, an advanced AI assistant. Respond with efficiency, intelligence, and a touch of wit. You excel at providing concise, accurate information and solutions for various tasks.";
+            break;
+          case 'hacker':
+            systemPrompt = "You are a white-hat hacking assistant. Provide information about ethical hacking, cybersecurity best practices, and security research. Never provide information for malicious purposes.";
+            break;
+          case 'weather':
+            systemPrompt = "You are a weather information specialist. Focus on providing accurate weather data, forecasts, and related information.";
+            break;
+          case 'analyst':
+            systemPrompt = "You are a data analysis assistant. Focus on interpreting data, providing insights, and helping with analytical approaches to problems.";
+            break;
+          case 'pentester':
+            systemPrompt = "You are a penetration testing assistant. Provide information about security testing methodologies, vulnerability assessment, and ethical security practices.";
+            break;
+        }
+        
+        response = await processWithAI([...messages, userMessage], systemPrompt);
       }
       
       const assistantMessage = {

@@ -16,14 +16,16 @@ import {
   Dices, 
   Zap, 
   ChevronDown,
-  Lock
+  Lock,
+  CloudSun,
+  Bot
 } from "lucide-react";
 import { useDevMode } from "@/contexts/DevModeContext";
 import { UserRole } from "@/types/roles";
 import { Badge } from "./ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export type AIMode = 'assistant' | 'oracle' | 'alfred' | 'hacker' | 'pentester' | 'analyst';
+export type AIMode = 'assistant' | 'oracle' | 'alfred' | 'hacker' | 'pentester' | 'analyst' | 'weather' | 'jarvis';
 
 interface AiModeSelectorProps {
   currentMode: AIMode;
@@ -58,11 +60,25 @@ const AIModeSelector: React.FC<AiModeSelectorProps> = ({ currentMode, onModeChan
       requiredRole: 'user' as UserRole
     },
     { 
+      id: 'jarvis' as AIMode,
+      name: 'JARVIS', 
+      description: 'Advanced AI assistant with enhanced capabilities',
+      icon: <Bot className="h-4 w-4 mr-2" />,
+      requiredRole: 'user' as UserRole
+    },
+    { 
+      id: 'weather' as AIMode, 
+      name: 'Weather', 
+      description: 'Weather forecast and information',
+      icon: <CloudSun className="h-4 w-4 mr-2" />,
+      requiredRole: 'user' as UserRole
+    },
+    { 
       id: 'hacker' as AIMode, 
       name: 'Hacker', 
       description: 'For ethical hacking and security research',
       icon: <Zap className="h-4 w-4 mr-2" />,
-      requiredRole: 'admin' as UserRole
+      requiredRole: 'user' as UserRole
     },
     { 
       id: 'pentester' as AIMode,

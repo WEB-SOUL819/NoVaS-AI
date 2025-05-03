@@ -16,6 +16,8 @@ import AIModeSelector, { AIMode } from "@/components/AIModeSelector";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import ChatInterface from "@/components/dashboard/ChatInterface";
 import SystemPanel from "@/components/dashboard/SystemPanel";
+import WeatherPanel from "@/components/weather/WeatherPanel";
+import { getUserLocation, getWeatherByCoordinates } from "@/utils/weatherService";
 
 // Demo modules for the system panel
 const DEMO_MODULES: Module[] = [
@@ -86,6 +88,7 @@ const Dashboard = () => {
   });
   const [showSystemPanel, setShowSystemPanel] = useState(!isMobile);
   const [currentAIMode, setCurrentAIMode] = useState<AIMode>('assistant');
+  const [showWeatherPanel, setShowWeatherPanel] = useState(false);
   
   const { isDevMode, userRole } = useDevMode();
   
@@ -109,6 +112,36 @@ const Dashboard = () => {
     setShowSystemPanel(!isMobile);
   }, [isMobile]);
 
+  // Handle mode-specific actions when the AI mode changes
+  useEffect(() => {
+    if (currentAIMode === 'weather') {
+      setShowWeatherPanel(true);
+      
+      // Get weather for user's location
+      const getLocationWeather = async () => {
+        const location = await getUserLocation();
+        if (location) {
+          const weather = await getWeatherByCoordinates(location);
+          if (weather) {
+            setMessages(prev => [
+              ...prev,
+              {
+                id: Date.now().toString(),
+                role: "assistant",
+                content: `Current weather in ${weather.location}: ${weather.temperature}°C, ${weather.description}. Humidity: ${weather.humidity}%, Wind: ${weather.windSpeed} m/s.`,
+                timestamp: new Date(),
+              }
+            ]);
+          }
+        }
+      };
+      
+      getLocationWeather();
+    } else {
+      setShowWeatherPanel(false);
+    }
+  }, [currentAIMode]);
+
   // Handle AI mode change
   const handleAIModeChange = (mode: AIMode) => {
     setCurrentAIMode(mode);
@@ -120,7 +153,9 @@ const Dashboard = () => {
       alfred: "Alfred mode at your service. I'll prioritize task management and personal assistance.",
       hacker: "Hacker mode engaged. I'll focus on ethical hacking and security topics.",
       pentester: "Pentester mode activated. Advanced security testing assistance is now available.",
-      analyst: "Analyst mode ready. I'll help with data analysis and intelligence gathering."
+      analyst: "Analyst mode ready. I'll help with data analysis and intelligence gathering.",
+      weather: "Weather mode activated. I can provide weather forecasts and information for any location.",
+      jarvis: "JARVIS mode activated. I'm at your service with enhanced capabilities and responsiveness."
     };
     
     setMessages(prev => [
@@ -183,14 +218,19 @@ const Dashboard = () => {
             <AIModeSelector currentMode={currentAIMode} onModeChange={handleAIModeChange} />
           </div>
           
-          <ChatInterface 
-            messages={messages}
-            setMessages={setMessages}
-            systemStatus={systemStatus}
-            setSystemStatus={setSystemStatus}
-            user={user}
-            isMobile={isMobile}
-          />
+          {showWeatherPanel && currentAIMode === 'weather' ? (
+            <WeatherPanel isMobile={isMobile} setMessages={setMessages} />
+          ) : (
+            <ChatInterface 
+              messages={messages}
+              setMessages={setMessages}
+              systemStatus={systemStatus}
+              setSystemStatus={setSystemStatus}
+              user={user}
+              isMobile={isMobile}
+              currentMode={currentAIMode}
+            />
+          )}
         </motion.div>
         
         {/* System Panel - conditionally rendered based on showSystemPanel state */}
