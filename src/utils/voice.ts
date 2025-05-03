@@ -1,6 +1,6 @@
 
 import { API_KEYS, VOICE_CONFIG } from "@/config/env";
-import { freeTTS } from "./freeTTS";
+import * as freeTTS from "./freeTTS";
 import { toast } from "sonner";
 
 // Use premium TTS if API key is available, otherwise use free TTS

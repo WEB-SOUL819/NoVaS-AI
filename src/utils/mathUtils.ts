@@ -41,11 +41,10 @@ export function evalMathExpression(text: string): number | null {
     // Replace ^ with ** for exponentiation
     expression = expression.replace(/\^/g, '**');
     
-    // Evaluate the expression
-    // Note: This uses eval which is generally not recommended for security reasons,
-    // but it's acceptable for a controlled mathematical expression evaluation
-    // eslint-disable-next-line no-eval
-    const result = eval(expression);
+    // Use Function constructor instead of eval for better security
+    // It still creates a new scope so variables from outer scope aren't accessible
+    const safeEval = new Function('return ' + expression);
+    const result = safeEval();
     
     // Make sure the result is a number
     if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) {

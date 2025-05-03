@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Message, Conversation } from "@/types";
+import { Message, Conversation, MessageRole } from "@/types";
 import { toast } from "sonner";
 
 /**
@@ -62,7 +62,7 @@ export async function getConversationMessages(conversationId: string): Promise<M
     // Format the messages
     const formattedMessages: Message[] = messages.map(msg => ({
       id: msg.id,
-      role: msg.role,
+      role: msg.role as MessageRole, // Cast the role to MessageRole type
       content: msg.content,
       timestamp: new Date(msg.timestamp),
     }));
